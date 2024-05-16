@@ -24,6 +24,16 @@ var img_explode2 = new Image(); img_explode2.src = "imgFolder/explode2.png";
 var img_explode3 = new Image(); img_explode3.src = "imgFolder/explode3.png";
 var img_explode4 = new Image(); img_explode4.src = "imgFolder/explode4.png";
 
+var img_target = new Image(); img_target.src = "imgFolder/target.png";
+var img_player = new Image(); img_player.src = "imgFolder/player.png";
+
+var img_fireR = new Image(); img_fireR.src = "imgFolder/fireR.png";
+var img_fireR2 = new Image(); img_fireR2.src = "imgFolder/fireR2.png";
+var img_fireL = new Image(); img_fireL.src = "imgFolder/fireL.png";
+var img_fireL2 = new Image(); img_fireL2.src = "imgFolder/fireL2.png";
+var img_fireD = new Image(); img_fireD.src = "imgFolder/fireD.png";
+var img_fireD2 = new Image(); img_fireD2.src = "imgFolder/fireD2.png";
+
 // jquery 공식 문서에서는 $(document).ready() 대신 $(function() {})을 사용하도록 권장함.
 $(function () {
     const gameCanvas = $("#game-canvas");
@@ -95,8 +105,8 @@ class Game {
 
     loadComponents() {
         this.player = new Player(this);
-        this.playerArrow = new PlayerLaunchAngleArrow(this, this.player);
         this.playerBall = new PlayerBall(this, this.player);
+        this.playerArrow = new PlayerLaunchAngleArrow(this, this.player, this.playerBall);
         new Anime_background(this);
 
 
@@ -299,8 +309,8 @@ class Player extends ComponentObject {
     maxSpeed;
     constructor(game) {
         super(game);
-        this.width = 80;
-        this.height = 10;
+        this.width = 81;
+        this.height = 9;
         this.maxSpeed = 500;
         this.position.set(GAME_WIDTH / 2, GAME_HEIGHT - this.height / 2 - 10);
         this.shape = new ShapeAABB(new Vector2(), new Vector2());
@@ -324,8 +334,16 @@ class Player extends ComponentObject {
     }
 
     draw(ctx) {
-        ctx.fillStyle = "#00FF00";
-        ctx.fillRect(this.position.x - this.width / 2, this.position.y - this.height / 2, this.width, this.height);
+        ctx.drawImage(img_player, this.position.x - 46.5, this.position.y - 10.5);
+        if (this.game.previousTicks % 100 > 50) {
+            if (gameInput.left) { ctx.drawImage(img_fireL, this.position.x - 10.5 + 60, this.position.y - 7.5); }
+            if (gameInput.right) { ctx.drawImage(img_fireR, this.position.x - 10.5 - 60, this.position.y - 7.5); }
+        }
+        else {
+            if (gameInput.left) { ctx.drawImage(img_fireL2, this.position.x - 10.5 + 60, this.position.y - 7.5); }
+            if (gameInput.right) { ctx.drawImage(img_fireR2, this.position.x - 10.5 - 60, this.position.y - 7.5); }
+        }
+        
     }
 }
 
@@ -436,23 +454,37 @@ class PlayerBall extends ComponentObject {
 class PlayerLaunchAngleArrow extends Component {
     length;
     player;
-    constructor(game, player) {
+    ball;
+    toFixPositionX;
+    constructor(game, player, ball) {
         super(game);
         this.length = 100;
         this.player = player;
+        this.ball = ball;
+        this.toFixPositionX = 0;
     }
 
     update(delta) {
-        let vectorToCursor = Vector2.subtract(cursorPosition, this.player.position);
-        vectorToCursor.setLength(this.length);
-        this.position = Vector2.plus(this.player.position, vectorToCursor);
+        if (Math.abs(this.ball.position.x - this.player.position.x) < this.player.width / 2) {
+            this.toFixPositionX = this.ball.position.x - this.player.position.x;
+        }
+
+
+        //let vectorToCursor = Vector2.subtract(cursorPosition, this.player.position);
+        //vectorToCursor.setLength(this.length);
+        //this.position = Vector2.plus(this.player.position, vectorToCursor);
+        this.position = cursorPosition;
+
     }
 
     draw(ctx) {
         ctx.beginPath();
-        ctx.moveTo(this.player.position.x, this.player.position.y);
+        ctx.strokeStyle = "red";
+        ctx.moveTo(this.player.position.x + this.toFixPositionX, this.player.position.y);
         ctx.lineTo(this.position.x, this.position.y);
         ctx.stroke();
+
+        ctx.drawImage(img_target, this.position.x - 15, this.position.y - 15);
     }
 }
 
@@ -463,7 +495,7 @@ class Box extends ComponentObject {
     height;
     owner;
     price;
-    constructor(game, position, width, height, owner = null) {
+    constructor(game, position, width, height, owner = null, boost) {
         super(game);
         this.position = Vector2.copy(position);
         this.width = width;
@@ -471,12 +503,15 @@ class Box extends ComponentObject {
         this.owner = owner;
         this.shape = new ShapeAABB(new Vector2(), new Vector2());
         this.updateShape();
-
         this.drawOrder = 50;
+
+        if (boost) {
+            new Anime_boost(this.game, this);
+        }
 
         game.collideablesWithBall.push(this);
     }
-
+    
     update(delta) {
         this.speed = Vector2.copy(this.owner.speed);
         super.update(delta);
@@ -536,43 +571,43 @@ class Box extends ComponentObject {
     }
 
     draw(ctx) {
-        ctx.fillStyle = "blue";
-        ctx.fillRect(this.position.x - this.width / 2, this.position.y - this.height / 2, this.width, this.height);
+
     }
 }
 
 class NormalBox extends Box {
-    constructor(game, position, owner) {
-        super(game, position, 30, 30, owner);
+    constructor(game, position, owner, boost) {
+        super(game, position, 30, 30, owner, boost);
         this.price = 10;
     }
 
     draw(ctx) {
-        // ctx.fillStyle = "lightGray";
-        // ctx.fillRect(this.position.x - this.width / 2, this.position.y - this.height / 2, this.width, this.height);
+        super.draw(ctx);
         ctx.drawImage(img_normalBox, this.position.x - this.width / 2, this.position.y - this.height / 2);
     }
 }
 
 class CoreBox extends Box {
-    constructor(game, position, owner) {
-        super(game, position, 30, 30, owner);
+    constructor(game, position, owner, boost) {
+        super(game, position, 30, 30, owner, boost);
         this.price = 200;
     }
 
     draw(ctx) {
+        super.draw(ctx);
         ctx.drawImage(img_coreBox, this.position.x - this.width / 2, this.position.y - this.height / 2);
     }
 }
 
 class BarrierBox extends Box {
-    constructor(game, position, owner) {
-        super(game, position, 30, 30, owner);
+    constructor(game, position, owner, boost) {
+        super(game, position, 30, 30, owner, boost);
         this.price = 95;
         this.drawOrder = 49; // 다른 box들은 50
     }
 
     draw(ctx) {
+        super.draw(ctx);
         ctx.drawImage(img_barrierBox, this.position.x - this.width / 2, this.position.y - this.height / 2);
     }
 }
@@ -581,8 +616,8 @@ class CannonBox extends Box {
     interval;
     coolTime;
 
-    constructor(game, position, owner) {
-        super(game, position, 30, 30, owner);
+    constructor(game, position, owner, boost) {
+        super(game, position, 30, 30, owner, boost);
         this.price = 35;
         this.coolTime = 2000;
         this.interval = setInterval(this.doAttack.bind(this), this.coolTime);
@@ -606,8 +641,8 @@ class MachinegunBox extends Box {
     interval;
     coolTime;
 
-    constructor(game, position, owner) {
-        super(game, position, 30, 30, owner);
+    constructor(game, position, owner, boost) {
+        super(game, position, 30, 30, owner, boost);
         this.price = 70;
         this.coolTime = 3000;
         this.interval = setInterval(this.doAttack.bind(this), this.coolTime);
@@ -632,8 +667,8 @@ class LazerBox extends Box {
     interval;
     coolTime;
 
-    constructor(game, position, owner) {
-        super(game, position, 30, 30, owner);
+    constructor(game, position, owner, boost) {
+        super(game, position, 30, 30, owner, boost);
         this.price = 100;
         this.coolTime = 6666;
         this.interval = setInterval(this.doAttack.bind(this), this.coolTime);
@@ -731,7 +766,7 @@ class Mob_pawn extends Mob {
     constructor(game, position) {
         super(game, position);
 
-        this.boxList.push(new CoreBox(game, this.position, this));
+        this.boxList.push(new CoreBox(game, this.position, this, true));
         this.boxList.push(new CannonBox(game, new Vector2(this.position.x, this.position.y + 30), this));
 
         this.resistance = 1000;
@@ -748,7 +783,7 @@ class Mob_knight extends Mob{
     constructor(game, position) {
         super(game, position);
          
-        this.boxList.push (new CoreBox(game, this.position, this));
+        this.boxList.push (new CoreBox(game, this.position, this, true));
         this.boxList.push (new BarrierBox(game, new Vector2(this.position.x + 0, this.position.y + 30), this));
         this.boxList.push (new CannonBox(game, new Vector2(this.position.x - 30, this.position.y + 0), this));
         this.boxList.push (new CannonBox(game, new Vector2(this.position.x + 30, this.position.y + 0), this));
@@ -774,11 +809,11 @@ class Mob_bishop extends Mob{
         this.boxList.push (new NormalBox(game, new Vector2(this.position.x + 60, this.position.y + 0), this));
         this.boxList.push (new NormalBox(game, new Vector2(this.position.x - 30, this.position.y + 0), this));
         this.boxList.push (new NormalBox(game, new Vector2(this.position.x - 60, this.position.y + 0), this));
-        this.boxList.push (new NormalBox(game, new Vector2(this.position.x + 0, this.position.y - 30), this));
+        this.boxList.push(new NormalBox(game, new Vector2(this.position.x + 0, this.position.y - 30), this, true));
         this.boxList.push (new MachinegunBox(game, new Vector2(this.position.x + 60, this.position.y + 30), this));
-        this.boxList.push (new MachinegunBox(game, new Vector2(this.position.x + 60, this.position.y - 30), this));
+        this.boxList.push(new MachinegunBox(game, new Vector2(this.position.x + 60, this.position.y - 30), this, true));
         this.boxList.push (new MachinegunBox(game, new Vector2(this.position.x - 60, this.position.y + 30), this));
-        this.boxList.push (new MachinegunBox(game, new Vector2(this.position.x - 60, this.position.y - 30), this));
+        this.boxList.push(new MachinegunBox(game, new Vector2(this.position.x - 60, this.position.y - 30), this, true));
     
         this.resistance = 1800;
     }
@@ -796,15 +831,15 @@ class Mob_rook extends Mob{
         this.boxList.push (new CoreBox(game, this.position, this));
         this.boxList.push (new BarrierBox(game, new Vector2(this.position.x + 0, this.position.y + 30), this));
         this.boxList.push (new NormalBox(game, new Vector2(this.position.x + 0, this.position.y + 60), this));
-        this.boxList.push (new NormalBox(game, new Vector2(this.position.x + 30, this.position.y - 30), this));
+        this.boxList.push(new NormalBox(game, new Vector2(this.position.x + 30, this.position.y - 30), this, true));
         this.boxList.push (new NormalBox(game, new Vector2(this.position.x + 30, this.position.y + 0), this));
         this.boxList.push (new NormalBox(game, new Vector2(this.position.x + 30, this.position.y + 30), this));
         this.boxList.push (new NormalBox(game, new Vector2(this.position.x + 30, this.position.y + 60), this));
-        this.boxList.push (new NormalBox(game, new Vector2(this.position.x - 30, this.position.y - 30), this));
+        this.boxList.push(new NormalBox(game, new Vector2(this.position.x - 30, this.position.y - 30), this, true));
         this.boxList.push (new NormalBox(game, new Vector2(this.position.x - 30, this.position.y + 0), this));
         this.boxList.push (new NormalBox(game, new Vector2(this.position.x - 30, this.position.y + 30), this));
         this.boxList.push (new NormalBox(game, new Vector2(this.position.x - 30, this.position.y + 60), this));
-        this.boxList.push (new LazerBox(game, new Vector2(this.position.x + 0, this.position.y - 30), this));
+        this.boxList.push(new LazerBox(game, new Vector2(this.position.x + 0, this.position.y - 30), this, true));
 
         this.resistance = 1800;
     }
@@ -949,7 +984,7 @@ class Lazer extends Attacks {
         super(game, box, radius, spdScalar, damage, err);
     }
     draw(ctx) {
-        this.game.ctx.drawImage(img_lazer, this.position.x -30  , this.position.y - 30);
+        this.game.ctx.drawImage(img_lazer, this.position.x - this.radius  , this.position.y - this.radius, this.radius*2, this.radius*2);
     }
 }
 
@@ -987,7 +1022,7 @@ class Anime_explode extends Anime { // 미완성
         this.size = size;
         this.opacity = 1;
         this.spd = 0.02;
-        this.drawOrder = 99;
+        this.drawOrder = 98;
         this.box = box;
         this.position = Vector2.copy(this.box.position);
 
@@ -1016,4 +1051,33 @@ class Anime_explode extends Anime { // 미완성
         ctx.drawImage(this.img, this.position.x - this.size / 2, this.position.y - this.size / 2, this.size, this.size);
         ctx.globalAlpha = 1;
     }        
+}
+
+class Anime_boost extends Anime {
+    box;
+    constructor(game, box) {
+        super(game);
+        this.drawOrder = 97;
+        this.box = box;
+        this.spd = 160;
+        this.opacity = 0.35;
+    }
+
+    update(delta) {
+        super.update(delta);
+        if (this.game.components.indexOf(this.box) < 0) {
+            this.game.removeComponent(this);
+        }
+    }
+
+    draw(ctx) {
+        ctx.globalAlpha = this.opacity;
+        if (this.game.previousTicks % this.spd > this.spd/2) {
+            ctx.drawImage(img_fireD, this.box.position.x - 10.5, this.box.position.y - 50.5);
+        }
+        else {
+            ctx.drawImage(img_fireD2, this.box.position.x - 10.5, this.box.position.y - 50.5);
+        }
+        ctx.globalAlpha = 1;
+    }
 }
