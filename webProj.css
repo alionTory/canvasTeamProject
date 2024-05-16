@@ -1,0 +1,9 @@
+/* prototype.css */
+#game-section{
+    margin-top:100px;
+}
+#game-canvas{
+    margin:0 auto;
+    display: block;
+    border:solid black;
+}
