@@ -19,6 +19,11 @@ var img_cannon = new Image(); img_cannon.src = "imgFolder/cannon.png";
 var img_playerBall = new Image(); img_playerBall.src = "imgFolder/playerBall.png";
 var img_background1 = new Image(); img_background1.src = "imgFolder/background1.png";
 
+var img_explode1 = new Image(); img_explode1.src = "imgFolder/explode1.png";
+var img_explode2 = new Image(); img_explode2.src = "imgFolder/explode2.png";
+var img_explode3 = new Image(); img_explode3.src = "imgFolder/explode3.png";
+var img_explode4 = new Image(); img_explode4.src = "imgFolder/explode4.png";
+
 // jquery 공식 문서에서는 $(document).ready() 대신 $(function() {})을 사용하도록 권장함.
 $(function () {
     const gameCanvas = $("#game-canvas");
@@ -140,11 +145,13 @@ class Game {
     }
     // components 에서 component를 빈 공간이 생기지 않게 삭제.
     removeComponent(component) {
-        let removeIndex = this.components.indexOf(component);
-        if (removeIndex == -1) {
-            console.error("Game removeComponent() : 배열에 지우려는 component가 없습니다.");
+        if (this.components.indexOf(component) >= 0) {
+            let removeIndex = this.components.indexOf(component);
+            if (removeIndex == -1) {
+                console.error("Game removeComponent() : 배열에 지우려는 component가 없습니다.");
+            }
+            this.components.splice(removeIndex, 1);
         }
-        this.components.splice(removeIndex, 1);
     }
 
     levelStarter(level) { // 코어가 부서질 때 레벨을 올릴지 판단할 것.
@@ -170,7 +177,7 @@ class Game {
                 this.mobList.push(new Mob_pawn(this, new Vector2(100, 200)));
                 this.mobList.push(new Mob_pawn(this, new Vector2(250, 200)));
                 this.mobList.push(new Mob_pawn(this, new Vector2(400, 200)));
-                this.mobList.push(new Mob_knight(this, new Vector2(250, 80)));    
+                this.mobList.push(new Mob_knight(this, new Vector2(250, 80)));   
             break;
 
             case 2:
@@ -484,13 +491,14 @@ class Box extends ComponentObject {
 
     destroyBox() {  
         let toAddCoin = 0;
+        let explodeSize = 60;
         if (this instanceof CoreBox) { // 코어가 부서졌다면, 적 기체 제거 + 레벨증가조건 확인
             for (let b of this.owner.boxList) {
-                if (this.game.components.indexOf(b) >= 0) {
-                    this.game.removeComponent(b);
-                    toAddCoin += b.price + 20; // 코어 부술 시 추가 코인
-                }
+                this.game.removeComponent(b);
+                toAddCoin += b.price + 20; // 코어 부술 시 추가 코인
             }
+
+            explodeSize = 120;
 
             // owner도 components에서 제거
             this.game.removeComponent(this.owner);
@@ -516,6 +524,9 @@ class Box extends ComponentObject {
         //코인 얼마나 벌었는지
         this.game.coin += toAddCoin;
         console.log(this.game.coin + "( + " + toAddCoin + ")");
+
+        //애니메이션
+        new Anime_explode(this.game, explodeSize, this);
     }
 
     updateShape() {
@@ -942,46 +953,67 @@ class Lazer extends Attacks {
     }
 }
 
-class Anime_background extends Component{
+class Anime extends Component {
+    img;
     spd;
-
+    opacity;
+    size;
     constructor(game) {
         super(game);
+    }
+
+    draw(ctx) {}
+
+}
+
+class Anime_background extends Anime {
+    constructor(game) {
+        super(game);
+        this.img = img_background1;
         this.spd = 0.01;
         this.drawOrder = 99;
     }
 
     draw(ctx) {
-        ctx.drawImage(img_background1, 0, this.spd * this.game.previousTicks % GAME_WIDTH - 700);
+        ctx.drawImage(this.img, 0, this.spd * this.game.previousTicks % GAME_WIDTH - 700);
     }        
 }
 
-class Anime_explode extends Component{ // 미완성
-    spd;
-    size;
-    opacity;
+class Anime_explode extends Anime { // 미완성
+    box;
 
-    constructor(game, size) {
+    constructor(game, size, box) {
         super(game);
-
         this.size = size;
         this.opacity = 1;
-        this.spd = 0.01;
+        this.spd = 0.02;
         this.drawOrder = 99;
+        this.box = box;
+        this.position = Vector2.copy(this.box.position);
+
+        this.img = img_explode1;
     }
 
     update(delta) {
-        if (this.opacity > 0) {
-            this.size *= 1.1;
-            opacity -= this.spd;
-            this.globalAlpha = opacity;
+        if (this.opacity > 0.5) {
+            this.size *= 1+this.spd;
+            this.opacity -= this.spd;
         } else {
-            removeComponent(this);
+            this.game.removeComponent(this);
         }
         super.update(delta);
     }
 
     draw(ctx) {
-        //ctx.drawImage(img_background1, 0, this.spd * this.game.previousTicks % GAME_WIDTH - 700);
+        switch (Math.floor(this.opacity / 0.10)) {
+            case 9: this.img = img_explode1; break;
+            case 8: this.img = img_explode2; break;
+            case 7: this.img = img_explode3; break;
+            case 6: this.img = img_explode4; break;
+        }
+
+        ctx.globalAlpha = this.opacity;
+        ctx.drawImage(this.img, this.position.x - this.size / 2, this.position.y - this.size / 2, this.size, this.size);
+        ctx.globalAlpha = 1;
     }        
 }
