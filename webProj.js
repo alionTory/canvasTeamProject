@@ -393,8 +393,8 @@ class PlayerBall extends ComponentObject {
         this.ignoreCollideWithPlayer = true;
     }
 
-    // 공의 최소 y좌표 속도 보장
-    applyMinYSpeed() {
+    // 공의 최소 y좌표 속도 보장하려는 용도. 부자연스러워서 삭제함
+    /*applyMinYSpeed() {
         if (-this.minYSpeed < this.speed.y && this.speed.y < this.minYSpeed) {
             if (this.speed.y <= 0)
                 this.speed.y = -this.minYSpeed;
@@ -406,7 +406,7 @@ class PlayerBall extends ComponentObject {
             else
                 this.speed.x = Math.sqrt(this.launchSpeed * this.launchSpeed - this.minYSpeed * this.minYSpeed);
         }
-    }
+    }*/
 
     draw(ctx) {
         ctx.drawImage(img_playerBall, this.position.x - 30, this.position.y - 30);
