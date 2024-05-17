@@ -355,19 +355,7 @@ class PlayerBall extends ComponentObject {
         for (let collideable of this.game.collideablesWithBall) {
             if (this.game.components.indexOf(collideable) >= 0)
                 ComponentObject.checkCollision(this, collideable);
-            // let collideInfo = this.shape.getCollisionInfo(collideable.shape);
-            // if (collideInfo.isCollided) {
-            //     if (collideable instanceof Player) {
-            //         this.collideWithPlayer();
-            //     } else {
-            //         let normal = Vector2.subtract(this.position, collideInfo.nearestPoint).nomalize();
-            //         let newSpeed = Vector2.reflect(this.speed, normal);
-            //         this.speed = newSpeed;
-            //     }
-            // }
         }
-
-        //this.applyMinYSpeed();
 
         super.update(delta);
 
