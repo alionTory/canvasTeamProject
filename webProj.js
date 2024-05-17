@@ -430,6 +430,7 @@ class PlayerLaunchAngleArrow extends Component {
     }
 
     draw(ctx) {
+        ctx.strokeStyle = "red";
         ctx.beginPath();
         ctx.moveTo(this.player.position.x, this.player.position.y);
         ctx.lineTo(this.position.x, this.position.y);
@@ -440,13 +441,15 @@ class PlayerLaunchAngleArrow extends Component {
 // 박스 관련
 
 class Box extends ComponentObject {
+    relativePosition;
     width;
     height;
     owner;
     price;
-    constructor(game, position, width, height, owner = null) {
+    constructor(game, relativePosition, width, height, owner = null) {
         super(game);
-        this.position = Vector2.copy(position);
+        this.relativePosition = relativePosition;
+        this.position = Vector2.plus(owner.position, relativePosition);
         this.width = width;
         this.height = height;
         this.owner = owner;
@@ -460,20 +463,21 @@ class Box extends ComponentObject {
 
     update(delta) {
         this.checkWallCollision();
-        this.speed = Vector2.copy(this.owner.speed);
+        //this.speed = Vector2.copy(this.owner.speed);
+        this.position = Vector2.plus(this.owner.position, this.relativePosition);
         super.update(delta);
     }
 
     checkWallCollision() {
         if (this.position.x <= this.width / 2 && this.owner.speed.x < 0) {  // 왼쪽 벽
-            this.owner.processCollision(new CollisionInfo(true, new Vector2(this.position.x - this.width / 2, this.position.y), "wall"));
+            this.owner.processCollision(new CollisionInfo(true, null, "left-wall"));
         }
         else if (GAME_WIDTH - this.position.x <= this.width / 2 && this.owner.speed.x > 0) {  // 오른쪽 벽
-            this.owner.processCollision(new CollisionInfo(true, new Vector2(this.position.x + this.width / 2, this.position.y), "wall"));
+            this.owner.processCollision(new CollisionInfo(true, null, "right-wall"));
         }
 
         if (this.position.y <= this.height && this.owner.speed.y < 0) {  // 위쪽 벽과 충돌 계산
-            this.owner.processCollision(new CollisionInfo(true, new Vector2(this.position.x, this.position.y - this.height / 2), "wall"));
+            this.owner.processCollision(new CollisionInfo(true, null, "up-wall"));
         }
     }
 
@@ -507,7 +511,7 @@ class Box extends ComponentObject {
             setTimeout(boxChange.bind(this), 1);
 
             function boxChange() {
-                this.owner.boxList.push(new NormalBox(this.game, this.position, this.owner));
+                this.owner.boxList.push(new NormalBox(this.game, this.relativePosition, this.owner));
                 this.game.removeComponent(this);
             }
 
@@ -669,9 +673,11 @@ class Mob extends ComponentObject {
             // 넉백
             let newSpeed = Vector2.subtract(this.position, collisionInfo.nearestPoint).setLength(collisionInfo.component.speed.getLength());
             this.speed = newSpeed;
-        } else if (collisionInfo.component == "wall") {
-            let normal = Vector2.subtract(this.position, collisionInfo.nearestPoint).nomalize();
-            this.speed = Vector2.reflect(this.speed, normal);
+        } else if (typeof collisionInfo.component == "string") {
+            if (collisionInfo.component == "left-wall" || collisionInfo.component == "right-wall")
+                this.speed.x *= -1;
+            if (collisionInfo.component == "up-wall")
+                this.speed.y *= -1;
         }
     }
 
@@ -734,8 +740,8 @@ class Mob_pawn extends Mob {
     constructor(game, position) {
         super(game, position);
 
-        this.boxList.push(new CoreBox(game, this.position, this));
-        this.boxList.push(new CannonBox(game, new Vector2(this.position.x, this.position.y + 30), this));
+        this.boxList.push(new CoreBox(game, new Vector2(), this));
+        this.boxList.push(new CannonBox(game, new Vector2(0, 30), this));
 
         this.resistance = 1000;
 
@@ -751,10 +757,10 @@ class Mob_knight extends Mob {
     constructor(game, position) {
         super(game, position);
 
-        this.boxList.push(new CoreBox(game, this.position, this));
-        this.boxList.push(new BarrierBox(game, new Vector2(this.position.x + 0, this.position.y + 30), this));
-        this.boxList.push(new CannonBox(game, new Vector2(this.position.x - 30, this.position.y + 0), this));
-        this.boxList.push(new CannonBox(game, new Vector2(this.position.x + 30, this.position.y + 0), this));
+        this.boxList.push(new CoreBox(game, new Vector2(), this));
+        this.boxList.push(new BarrierBox(game, new Vector2(0, 30), this));
+        this.boxList.push(new CannonBox(game, new Vector2(-30, 0), this));
+        this.boxList.push(new CannonBox(game, new Vector2(30, 0), this));
 
         this.resistance = 1500;
 
