@@ -665,9 +665,14 @@ class Mob extends ComponentObject {
     }
 
     processCollision(collisionInfo) {
-        // 넉백
-        let newSpeed = Vector2.subtract(this.position, collisionInfo.nearestPoint).setLength(collisionInfo.component.speed.getLength());
-        this.speed = newSpeed;
+        if (collisionInfo.component instanceof PlayerBall) {
+            // 넉백
+            let newSpeed = Vector2.subtract(this.position, collisionInfo.nearestPoint).setLength(collisionInfo.component.speed.getLength());
+            this.speed = newSpeed;
+        } else if (collisionInfo.component == "wall") {
+            let normal = Vector2.subtract(this.position, collisionInfo.nearestPoint).nomalize();
+            this.speed = Vector2.reflect(this.speed, normal);
+        }
     }
 
     update(delta) {
