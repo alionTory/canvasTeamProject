@@ -122,7 +122,7 @@ class CollisionInfo {
     isCollided;
     nearestPoint;
     component;
-    constructor(isCollided, nearestPoint, component=null) {
+    constructor(isCollided, nearestPoint=null, component=null) {
         this.isCollided = isCollided;
         this.nearestPoint = nearestPoint;
         this.component = component;
