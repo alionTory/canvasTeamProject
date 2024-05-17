@@ -478,8 +478,10 @@ class Box extends ComponentObject {
     processCollision(collisionInfo) {
         this.owner.processCollision(collisionInfo);
 
-        //충돌된 상자 제거
-        this.destroyBox();
+        if (collisionInfo.component instanceof PlayerBall) {
+            //충돌된 상자 제거
+            this.destroyBox();
+        }
     }
 
     destroyBox() {  
@@ -711,6 +713,11 @@ class Mob extends ComponentObject {
             this.speed.y += this.resistance * delta;
             if (this.speed.y > this.leastSpeed.y)
                 this.speed.y = this.leastSpeed.y;
+        }
+
+        // 밑에 세줄은 충돌 테스트용
+        if (this.speed.y <= this.leastSpeed.y && this.position.y >= this.arrivalPosY) {
+            this.resistance = 100;
         }
     }
 }
