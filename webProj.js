@@ -165,13 +165,13 @@ class Game {
             }
         }
 
-        switch(level) {
+        switch (level) {
             case 1:
                 this.mobList.push(new Mob_pawn(this, new Vector2(100, 200)));
                 this.mobList.push(new Mob_pawn(this, new Vector2(250, 200)));
                 this.mobList.push(new Mob_pawn(this, new Vector2(400, 200)));
-                this.mobList.push(new Mob_knight(this, new Vector2(250, 80)));    
-            break;
+                this.mobList.push(new Mob_knight(this, new Vector2(250, 80)));
+                break;
 
             case 2:
                 this.mobList.push(new Mob_pawn(this, new Vector2(50, 100)));
@@ -180,7 +180,7 @@ class Game {
                 this.mobList.push(new Mob_rook(this, new Vector2(100, 300)));
                 this.mobList.push(new Mob_rook(this, new Vector2(400, 300)));
                 this.mobList.push(new Mob_bishop(this, new Vector2(250, 100)));
-            break;
+                break;
 
             case 3:
                 this.mobList.push(new Mob_pawn(this, new Vector2(50, 100)));
@@ -190,7 +190,7 @@ class Game {
                 this.mobList.push(new Mob_king(this, new Vector2(250, 300)));
                 this.mobList.push(new Mob_qween(this, new Vector2(250, 100)));
 
-            break;
+                break;
 
             default:
                 this.gameEnd();
@@ -459,8 +459,22 @@ class Box extends ComponentObject {
     }
 
     update(delta) {
+        this.checkWallCollision();
         this.speed = Vector2.copy(this.owner.speed);
         super.update(delta);
+    }
+
+    checkWallCollision() {
+        if (this.position.x <= this.width / 2 && this.owner.speed.x < 0) {  // 왼쪽 벽
+            this.owner.processCollision(new CollisionInfo(true, new Vector2(this.position.x - this.width / 2, this.position.y), "wall"));
+        }
+        else if (GAME_WIDTH - this.position.x <= this.width / 2 && this.owner.speed.x > 0) {  // 오른쪽 벽
+            this.owner.processCollision(new CollisionInfo(true, new Vector2(this.position.x + this.width / 2, this.position.y), "wall"));
+        }
+
+        if (this.position.y <= this.height && this.owner.speed.y < 0) {  // 위쪽 벽과 충돌 계산
+            this.owner.processCollision(new CollisionInfo(true, new Vector2(this.position.x, this.position.y - this.height / 2), "wall"));
+        }
     }
 
     processCollision(collisionInfo) {
@@ -472,7 +486,7 @@ class Box extends ComponentObject {
         }
     }
 
-    destroyBox() {  
+    destroyBox() {
         let toAddCoin = 0;
         if (this instanceof CoreBox) { // 코어가 부서졌다면, 적 기체 제거 + 레벨증가조건 확인
             for (let b of this.owner.boxList) {
@@ -484,7 +498,7 @@ class Box extends ComponentObject {
 
             // owner도 components에서 제거
             this.game.removeComponent(this.owner);
-            this.game.mobList.splice(this.game.mobList.indexOf(this.owner),1);
+            this.game.mobList.splice(this.game.mobList.indexOf(this.owner), 1);
             this.game.mobList.remove
             // 레벨 올릴지 검사
             this.game.checkLevelUp();
@@ -572,7 +586,7 @@ class CannonBox extends Box {
     }
 
     doAttack() {
-        if (this.game.components.indexOf(this) < 0 ) {
+        if (this.game.components.indexOf(this) < 0) {
             clearInterval(this.interval);
             return;
         }
@@ -597,10 +611,10 @@ class MachinegunBox extends Box {
     }
 
     doAttack() {
-        if (this.game.components.indexOf(this) < 0 ) {
+        if (this.game.components.indexOf(this) < 0) {
             clearInterval(this.interval);
-        return;
-    }
+            return;
+        }
         let bullet1 = new Bullet(this.game, this);
         let bullet2 = new Bullet(this.game, this);
         let bullet3 = new Bullet(this.game, this);
@@ -623,7 +637,7 @@ class LazerBox extends Box {
     }
 
     doAttack() {
-        if (this.game.components.indexOf(this) < 0 ) {
+        if (this.game.components.indexOf(this) < 0) {
             clearInterval(this.interval);
             return;
         }
@@ -662,7 +676,7 @@ class Mob extends ComponentObject {
         this.isArrived();
     }
 
-    isArrived() { 
+    isArrived() {
         // 맵 내부로 도착했는가
         if (this.position.y >= this.arrivalPosY) {
             this.leastSpeed = new Vector2(0, 5);
@@ -727,90 +741,90 @@ class Mob_pawn extends Mob {
     }
 }
 
-class Mob_knight extends Mob{
-    
+class Mob_knight extends Mob {
+
     constructor(game, position) {
         super(game, position);
-         
-        this.boxList.push (new CoreBox(game, this.position, this));
-        this.boxList.push (new BarrierBox(game, new Vector2(this.position.x + 0, this.position.y + 30), this));
-        this.boxList.push (new CannonBox(game, new Vector2(this.position.x - 30, this.position.y + 0), this));
-        this.boxList.push (new CannonBox(game, new Vector2(this.position.x + 30, this.position.y + 0), this));
+
+        this.boxList.push(new CoreBox(game, this.position, this));
+        this.boxList.push(new BarrierBox(game, new Vector2(this.position.x + 0, this.position.y + 30), this));
+        this.boxList.push(new CannonBox(game, new Vector2(this.position.x - 30, this.position.y + 0), this));
+        this.boxList.push(new CannonBox(game, new Vector2(this.position.x + 30, this.position.y + 0), this));
 
         this.resistance = 1500;
 
     }
 
     draw() {
-        this.game.ctx.drawImage(img_knightBody, this.position.x -105  , this.position.y - 75);
+        this.game.ctx.drawImage(img_knightBody, this.position.x - 105, this.position.y - 75);
     }
 }
 
-class Mob_bishop extends Mob{
-    
+class Mob_bishop extends Mob {
+
     constructor(game, position) {
         super(game, position);
-         
-        this.boxList.push (new CoreBox(game, this.position, this));
-        this.boxList.push (new BarrierBox(game, new Vector2(this.position.x + 0, this.position.y + 30), this));
-        this.boxList.push (new NormalBox(game, new Vector2(this.position.x + 0, this.position.y + 60), this));
-        this.boxList.push (new NormalBox(game, new Vector2(this.position.x + 30, this.position.y + 0), this));
-        this.boxList.push (new NormalBox(game, new Vector2(this.position.x + 60, this.position.y + 0), this));
-        this.boxList.push (new NormalBox(game, new Vector2(this.position.x - 30, this.position.y + 0), this));
-        this.boxList.push (new NormalBox(game, new Vector2(this.position.x - 60, this.position.y + 0), this));
-        this.boxList.push (new NormalBox(game, new Vector2(this.position.x + 0, this.position.y - 30), this));
-        this.boxList.push (new MachinegunBox(game, new Vector2(this.position.x + 60, this.position.y + 30), this));
-        this.boxList.push (new MachinegunBox(game, new Vector2(this.position.x + 60, this.position.y - 30), this));
-        this.boxList.push (new MachinegunBox(game, new Vector2(this.position.x - 60, this.position.y + 30), this));
-        this.boxList.push (new MachinegunBox(game, new Vector2(this.position.x - 60, this.position.y - 30), this));
-    
-        this.resistance = 1800;
-    }
 
-    draw() {
-        this.game.ctx.drawImage(img_bishopBody, this.position.x -105  , this.position.y - 75);
-    }
-}
-
-class Mob_rook extends Mob{
-    
-    constructor(game, position) {
-        super(game, position);
-         
-        this.boxList.push (new CoreBox(game, this.position, this));
-        this.boxList.push (new BarrierBox(game, new Vector2(this.position.x + 0, this.position.y + 30), this));
-        this.boxList.push (new NormalBox(game, new Vector2(this.position.x + 0, this.position.y + 60), this));
-        this.boxList.push (new NormalBox(game, new Vector2(this.position.x + 30, this.position.y - 30), this));
-        this.boxList.push (new NormalBox(game, new Vector2(this.position.x + 30, this.position.y + 0), this));
-        this.boxList.push (new NormalBox(game, new Vector2(this.position.x + 30, this.position.y + 30), this));
-        this.boxList.push (new NormalBox(game, new Vector2(this.position.x + 30, this.position.y + 60), this));
-        this.boxList.push (new NormalBox(game, new Vector2(this.position.x - 30, this.position.y - 30), this));
-        this.boxList.push (new NormalBox(game, new Vector2(this.position.x - 30, this.position.y + 0), this));
-        this.boxList.push (new NormalBox(game, new Vector2(this.position.x - 30, this.position.y + 30), this));
-        this.boxList.push (new NormalBox(game, new Vector2(this.position.x - 30, this.position.y + 60), this));
-        this.boxList.push (new LazerBox(game, new Vector2(this.position.x + 0, this.position.y - 30), this));
+        this.boxList.push(new CoreBox(game, this.position, this));
+        this.boxList.push(new BarrierBox(game, new Vector2(this.position.x + 0, this.position.y + 30), this));
+        this.boxList.push(new NormalBox(game, new Vector2(this.position.x + 0, this.position.y + 60), this));
+        this.boxList.push(new NormalBox(game, new Vector2(this.position.x + 30, this.position.y + 0), this));
+        this.boxList.push(new NormalBox(game, new Vector2(this.position.x + 60, this.position.y + 0), this));
+        this.boxList.push(new NormalBox(game, new Vector2(this.position.x - 30, this.position.y + 0), this));
+        this.boxList.push(new NormalBox(game, new Vector2(this.position.x - 60, this.position.y + 0), this));
+        this.boxList.push(new NormalBox(game, new Vector2(this.position.x + 0, this.position.y - 30), this));
+        this.boxList.push(new MachinegunBox(game, new Vector2(this.position.x + 60, this.position.y + 30), this));
+        this.boxList.push(new MachinegunBox(game, new Vector2(this.position.x + 60, this.position.y - 30), this));
+        this.boxList.push(new MachinegunBox(game, new Vector2(this.position.x - 60, this.position.y + 30), this));
+        this.boxList.push(new MachinegunBox(game, new Vector2(this.position.x - 60, this.position.y - 30), this));
 
         this.resistance = 1800;
     }
 
     draw() {
-        this.game.ctx.drawImage(img_rookBody, this.position.x -105  , this.position.y - 75);
+        this.game.ctx.drawImage(img_bishopBody, this.position.x - 105, this.position.y - 75);
     }
 }
 
-class Mob_qween extends Mob{
-    
+class Mob_rook extends Mob {
+
+    constructor(game, position) {
+        super(game, position);
+
+        this.boxList.push(new CoreBox(game, this.position, this));
+        this.boxList.push(new BarrierBox(game, new Vector2(this.position.x + 0, this.position.y + 30), this));
+        this.boxList.push(new NormalBox(game, new Vector2(this.position.x + 0, this.position.y + 60), this));
+        this.boxList.push(new NormalBox(game, new Vector2(this.position.x + 30, this.position.y - 30), this));
+        this.boxList.push(new NormalBox(game, new Vector2(this.position.x + 30, this.position.y + 0), this));
+        this.boxList.push(new NormalBox(game, new Vector2(this.position.x + 30, this.position.y + 30), this));
+        this.boxList.push(new NormalBox(game, new Vector2(this.position.x + 30, this.position.y + 60), this));
+        this.boxList.push(new NormalBox(game, new Vector2(this.position.x - 30, this.position.y - 30), this));
+        this.boxList.push(new NormalBox(game, new Vector2(this.position.x - 30, this.position.y + 0), this));
+        this.boxList.push(new NormalBox(game, new Vector2(this.position.x - 30, this.position.y + 30), this));
+        this.boxList.push(new NormalBox(game, new Vector2(this.position.x - 30, this.position.y + 60), this));
+        this.boxList.push(new LazerBox(game, new Vector2(this.position.x + 0, this.position.y - 30), this));
+
+        this.resistance = 1800;
+    }
+
+    draw() {
+        this.game.ctx.drawImage(img_rookBody, this.position.x - 105, this.position.y - 75);
+    }
+}
+
+class Mob_qween extends Mob {
+
     constructor(game, position) {
         super(game, position);
 
         for (let i = -1; i < 2; i++) {
             for (let j = -2; j < 3; j++) {
                 if (i == 0 && j == 0) {
-                    this.boxList.push (new CoreBox(game, this.position, this));
+                    this.boxList.push(new CoreBox(game, this.position, this));
                     continue;
                 }
 
-                else this.boxList.push (new MachinegunBox(game, new Vector2(this.position.x + i*30, this.position.y + j*30), this));
+                else this.boxList.push(new MachinegunBox(game, new Vector2(this.position.x + i * 30, this.position.y + j * 30), this));
             }
         }
 
@@ -822,19 +836,19 @@ class Mob_qween extends Mob{
     }
 }
 
-class Mob_king extends Mob{
-    
+class Mob_king extends Mob {
+
     constructor(game, position) {
         super(game, position);
 
         for (let i = -2; i < 3; i++) {
             for (let j = -2; j < 4; j++) {
                 if (i == 0 && j == 0) {
-                    this.boxList.push (new CoreBox(game, this.position, this));
+                    this.boxList.push(new CoreBox(game, this.position, this));
                     continue;
                 }
 
-                else this.boxList.push (new BarrierBox(game, new Vector2(this.position.x + i*30, this.position.y + j*30), this));
+                else this.boxList.push(new BarrierBox(game, new Vector2(this.position.x + i * 30, this.position.y + j * 30), this));
             }
         }
 
@@ -865,11 +879,11 @@ class Attacks extends ComponentObject {
         this.damage = damage;
         this.position = Vector2.copy(this.box.position);
         this.err = err;
-        this.angleError = Math.random() * this.err -0.5 * err;
+        this.angleError = Math.random() * this.err - 0.5 * err;
 
         this.newSpeed = new Vector2((this.player.position.x - this.box.position.x), (this.player.position.y - this.box.position.y));
-        this.speed = new Vector2(this.spdScalar * this.newSpeed.x/this.newSpeed.y + this.angleError, this.spdScalar);
-        
+        this.speed = new Vector2(this.spdScalar * this.newSpeed.x / this.newSpeed.y + this.angleError, this.spdScalar);
+
         this.shape = new ShapeCircle(this.position, this.radius);
 
         this.drawOrder = 30;
@@ -880,9 +894,9 @@ class Attacks extends ComponentObject {
         if (this.position.y >= 800) {
             this.game.removeComponent(this);
         }
-  
+
         ComponentObject.checkCollision(this, this.game.player);
-  
+
         super.update(delta);
     }
 
@@ -907,7 +921,7 @@ class Cannon extends Attacks {
     }
 
     draw(ctx) {
-        this.game.ctx.drawImage(img_cannon, this.position.x -30  , this.position.y - 30);
+        this.game.ctx.drawImage(img_cannon, this.position.x - 30, this.position.y - 30);
     }
 }
 
@@ -920,7 +934,7 @@ class Bullet extends Attacks {
         super(game, box, radius, spdScalar, damage, err);
     }
     draw(ctx) {
-        this.game.ctx.drawImage(img_bullet, this.position.x -30  , this.position.y - 30);
+        this.game.ctx.drawImage(img_bullet, this.position.x - 30, this.position.y - 30);
     }
 }
 
@@ -933,11 +947,11 @@ class Lazer extends Attacks {
         super(game, box, radius, spdScalar, damage, err);
     }
     draw(ctx) {
-        this.game.ctx.drawImage(img_lazer, this.position.x -30  , this.position.y - 30);
+        this.game.ctx.drawImage(img_lazer, this.position.x - 30, this.position.y - 30);
     }
 }
 
-class Anime_background extends Component{
+class Anime_background extends Component {
     spd;
 
     constructor(game) {
@@ -948,10 +962,10 @@ class Anime_background extends Component{
 
     draw(ctx) {
         ctx.drawImage(img_background1, 0, this.spd * this.game.previousTicks % GAME_WIDTH - 700);
-    }        
+    }
 }
 
-class Anime_explode extends Component{ // 미완성
+class Anime_explode extends Component { // 미완성
     spd;
     size;
     opacity;
@@ -978,5 +992,5 @@ class Anime_explode extends Component{ // 미완성
 
     draw(ctx) {
         //ctx.drawImage(img_background1, 0, this.spd * this.game.previousTicks % GAME_WIDTH - 700);
-    }        
+    }
 }
