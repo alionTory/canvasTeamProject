@@ -77,14 +77,18 @@ class Vector2 {
 
 // 충돌 판정을 위한 클래스. ComponentObject의 필드로 저장된다.
 class Shape {
+    owner;
+    constructor(owner) {
+        this.owner = owner;
+    }
     getCollisionInfo(shape) { }
 }
 
 class ShapeCircle extends Shape {
     position;
     radius;
-    constructor(position, radius) {
-        super();
+    constructor(owner, position, radius) {
+        super(owner);
         this.position = Vector2.copy(position);
         this.radius = radius
     }
@@ -102,8 +106,8 @@ class ShapeCircle extends Shape {
 class ShapeAABB extends Shape{
     min;
     max;
-    constructor(min, max) {
-        super();
+    constructor(owner, min, max) {
+        super(owner);
         this.min = Vector2.copy(min);
         this.max = Vector2.copy(max);
     }

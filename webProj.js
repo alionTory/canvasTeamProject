@@ -273,12 +273,12 @@ class ComponentObject extends Component {
             if (object2.shape instanceof ShapeAABB) {
                 let collisionInfo = object1.shape.getCollisionInfo(object2.shape);
                 if (collisionInfo.isCollided) {
-                    collisionInfo.component = object2;
-                    object1.processCollision(collisionInfo);
-
-                    collisionInfo = collisionInfo.copy();
                     collisionInfo.component = object1;
                     object2.processCollision(collisionInfo);
+
+                    collisionInfo = collisionInfo.copy();
+                    collisionInfo.component = object2;
+                    object1.processCollision(collisionInfo);
                 }
             }
         }
@@ -296,7 +296,7 @@ class Player extends ComponentObject {
         this.height = 10;
         this.maxSpeed = 500;
         this.position.set(GAME_WIDTH / 2, GAME_HEIGHT - this.height / 2 - 10);
-        this.shape = new ShapeAABB(new Vector2(), new Vector2());
+        this.shape = new ShapeAABB(this, new Vector2(), new Vector2());
         game.collideablesWithBall.push(this);
     }
 
@@ -336,7 +336,7 @@ class PlayerBall extends ComponentObject {
         this.minYSpeed = 100;
         this.ignoreCollideWithPlayer = false;
         this.position.set(player.position.x, player.position.y + this.radius + player.height / 2);
-        this.shape = new ShapeCircle(this.position, this.radius);
+        this.shape = new ShapeCircle(this, this.position, this.radius);
     }
 
     update(delta) {
@@ -453,7 +453,10 @@ class Box extends ComponentObject {
         this.width = width;
         this.height = height;
         this.owner = owner;
-        this.shape = new ShapeAABB(new Vector2(), new Vector2());
+        // Box의 위치 정보는 ShapeAABB의 2, 3 번째 매개변수로 전달됨.
+        // 추가로 필요할 수 있는 건 속도 정보.
+        // 그런데 Box의 속도는 무의미하므로 대신 owner의 속도 정보에 접근할 수 있도록 함.
+        this.shape = new ShapeAABB(this.owner, new Vector2(), new Vector2());
         this.updateShape();
 
         this.drawOrder = 50;
@@ -895,7 +898,7 @@ class Attacks extends ComponentObject {
         this.newSpeed = new Vector2((this.player.position.x - this.box.position.x), (this.player.position.y - this.box.position.y));
         this.speed = new Vector2(this.spdScalar * this.newSpeed.x / this.newSpeed.y + this.angleError, this.spdScalar);
 
-        this.shape = new ShapeCircle(this.position, this.radius);
+        this.shape = new ShapeCircle(this, this.position, this.radius);
 
         this.drawOrder = 30;
     }
