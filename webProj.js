@@ -779,18 +779,18 @@ class Mob_bishop extends Mob {
     constructor(game, position) {
         super(game, position);
 
-        this.boxList.push(new CoreBox(game, this.position, this));
-        this.boxList.push(new BarrierBox(game, new Vector2(this.position.x + 0, this.position.y + 30), this));
-        this.boxList.push(new NormalBox(game, new Vector2(this.position.x + 0, this.position.y + 60), this));
-        this.boxList.push(new NormalBox(game, new Vector2(this.position.x + 30, this.position.y + 0), this));
-        this.boxList.push(new NormalBox(game, new Vector2(this.position.x + 60, this.position.y + 0), this));
-        this.boxList.push(new NormalBox(game, new Vector2(this.position.x - 30, this.position.y + 0), this));
-        this.boxList.push(new NormalBox(game, new Vector2(this.position.x - 60, this.position.y + 0), this));
-        this.boxList.push(new NormalBox(game, new Vector2(this.position.x + 0, this.position.y - 30), this));
-        this.boxList.push(new MachinegunBox(game, new Vector2(this.position.x + 60, this.position.y + 30), this));
-        this.boxList.push(new MachinegunBox(game, new Vector2(this.position.x + 60, this.position.y - 30), this));
-        this.boxList.push(new MachinegunBox(game, new Vector2(this.position.x - 60, this.position.y + 30), this));
-        this.boxList.push(new MachinegunBox(game, new Vector2(this.position.x - 60, this.position.y - 30), this));
+        this.boxList.push(new CoreBox(game, new Vector2(), this));
+        this.boxList.push(new BarrierBox(game, new Vector2(0, 30), this));
+        this.boxList.push(new NormalBox(game, new Vector2(0, 60), this));
+        this.boxList.push(new NormalBox(game, new Vector2(30, 0), this));
+        this.boxList.push(new NormalBox(game, new Vector2(60, 0), this));
+        this.boxList.push(new NormalBox(game, new Vector2(-30, 0), this));
+        this.boxList.push(new NormalBox(game, new Vector2(-60, 0), this));
+        this.boxList.push(new NormalBox(game, new Vector2(0, -30), this));
+        this.boxList.push(new MachinegunBox(game, new Vector2(60, 30), this));
+        this.boxList.push(new MachinegunBox(game, new Vector2(60, -30), this));
+        this.boxList.push(new MachinegunBox(game, new Vector2(-60, 30), this));
+        this.boxList.push(new MachinegunBox(game, new Vector2(-60, -30), this));
 
         this.resistance = 1800;
     }
@@ -805,18 +805,18 @@ class Mob_rook extends Mob {
     constructor(game, position) {
         super(game, position);
 
-        this.boxList.push(new CoreBox(game, this.position, this));
-        this.boxList.push(new BarrierBox(game, new Vector2(this.position.x + 0, this.position.y + 30), this));
-        this.boxList.push(new NormalBox(game, new Vector2(this.position.x + 0, this.position.y + 60), this));
-        this.boxList.push(new NormalBox(game, new Vector2(this.position.x + 30, this.position.y - 30), this));
-        this.boxList.push(new NormalBox(game, new Vector2(this.position.x + 30, this.position.y + 0), this));
-        this.boxList.push(new NormalBox(game, new Vector2(this.position.x + 30, this.position.y + 30), this));
-        this.boxList.push(new NormalBox(game, new Vector2(this.position.x + 30, this.position.y + 60), this));
-        this.boxList.push(new NormalBox(game, new Vector2(this.position.x - 30, this.position.y - 30), this));
-        this.boxList.push(new NormalBox(game, new Vector2(this.position.x - 30, this.position.y + 0), this));
-        this.boxList.push(new NormalBox(game, new Vector2(this.position.x - 30, this.position.y + 30), this));
-        this.boxList.push(new NormalBox(game, new Vector2(this.position.x - 30, this.position.y + 60), this));
-        this.boxList.push(new LazerBox(game, new Vector2(this.position.x + 0, this.position.y - 30), this));
+        this.boxList.push(new CoreBox(game, new Vector2(), this));
+        this.boxList.push(new BarrierBox(game, new Vector2(0, 30), this));
+        this.boxList.push(new NormalBox(game, new Vector2(0, 60), this));
+        this.boxList.push(new NormalBox(game, new Vector2(30, -30), this));
+        this.boxList.push(new NormalBox(game, new Vector2(30, 0), this));
+        this.boxList.push(new NormalBox(game, new Vector2(30, 30), this));
+        this.boxList.push(new NormalBox(game, new Vector2(30, 60), this));
+        this.boxList.push(new NormalBox(game, new Vector2(-30, -30), this));
+        this.boxList.push(new NormalBox(game, new Vector2(-30, 0), this));
+        this.boxList.push(new NormalBox(game, new Vector2(-30, 30), this));
+        this.boxList.push(new NormalBox(game, new Vector2(-30, 60), this));
+        this.boxList.push(new LazerBox(game, new Vector2(0, -30), this));
 
         this.resistance = 1800;
     }
@@ -834,11 +834,11 @@ class Mob_qween extends Mob {
         for (let i = -1; i < 2; i++) {
             for (let j = -2; j < 3; j++) {
                 if (i == 0 && j == 0) {
-                    this.boxList.push(new CoreBox(game, this.position, this));
+                    this.boxList.push(new CoreBox(game, new Vector2(), this));
                     continue;
                 }
 
-                else this.boxList.push(new MachinegunBox(game, new Vector2(this.position.x + i * 30, this.position.y + j * 30), this));
+                else this.boxList.push(new MachinegunBox(game, new Vector2(i * 30, j * 30), this));
             }
         }
 
@@ -858,11 +858,11 @@ class Mob_king extends Mob {
         for (let i = -2; i < 3; i++) {
             for (let j = -2; j < 4; j++) {
                 if (i == 0 && j == 0) {
-                    this.boxList.push(new CoreBox(game, this.position, this));
+                    this.boxList.push(new CoreBox(game, new Vector2(), this));
                     continue;
                 }
 
-                else this.boxList.push(new BarrierBox(game, new Vector2(this.position.x + i * 30, this.position.y + j * 30), this));
+                else this.boxList.push(new BarrierBox(game, new Vector2(i * 30, j * 30), this));
             }
         }
 
