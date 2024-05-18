@@ -732,9 +732,9 @@ class Mob extends ComponentObject {
         }
 
         // 밑에 세줄은 충돌 테스트용
-        if (this.speed.y <= this.leastSpeed.y && this.position.y >= this.arrivalPosY) {
-            this.resistance = 100;
-        }
+        // if (this.speed.y <= this.leastSpeed.y && this.position.y >= this.arrivalPosY) {
+        //     this.resistance = 100;
+        // }
     }
 }
 
