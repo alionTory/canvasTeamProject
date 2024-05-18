@@ -272,13 +272,9 @@ class ComponentObject extends Component {
         if (object1.shape instanceof ShapeCircle) {
             if (object2.shape instanceof ShapeAABB) {
                 let collisionInfo = object1.shape.getCollisionInfo(object2.shape);
-                if (collisionInfo.isCollided) {
-                    collisionInfo.component = object1;
-                    object2.processCollision(collisionInfo);
-
-                    collisionInfo = collisionInfo.copy();
-                    collisionInfo.component = object2;
-                    object1.processCollision(collisionInfo);
+                if (collisionInfo[0].isCollided) {
+                    object2.processCollision(collisionInfo[1]);
+                    object1.processCollision(collisionInfo[0]);
                 }
             }
         }
@@ -340,17 +336,7 @@ class PlayerBall extends ComponentObject {
     }
 
     update(delta) {
-        // 벽과의 충돌 계산
-        if (this.position.x <= this.radius && this.speed.x < 0) {  // 왼쪽 벽
-            this.speed.x *= -1;
-        }
-        else if (GAME_WIDTH - this.position.x <= this.radius && this.speed.x > 0) {  // 오른쪽 벽
-            this.speed.x *= -1;
-        }
-
-        if (this.position.y <= this.radius && this.speed.y < 0) {  // 위쪽 벽과 충돌 계산
-            this.speed.y *= -1;
-        }
+        this.checkWallCollision();
 
         for (let collideable of this.game.collideablesWithBall) {
             if (this.game.components.indexOf(collideable) >= 0)
@@ -369,17 +355,31 @@ class PlayerBall extends ComponentObject {
         this.shape.position = Vector2.copy(this.position);
     }
 
+    checkWallCollision() {
+        if (this.position.x <= this.radius) {  // 왼쪽 벽
+            this.processCollision(new CollisionInfo(true, "left", "wall"));
+        }
+        else if (GAME_WIDTH - this.position.x <= this.radius) {  // 오른쪽 벽
+            this.processCollision(new CollisionInfo(true, "right", "wall"));
+        }
+
+        if (this.position.y <= this.radius) {  // 위쪽 벽과 충돌
+            this.processCollision(new CollisionInfo(true, "up", "wall"));
+        }
+    }
+
     processCollision(collisionInfo) {
         if (collisionInfo.component instanceof Player) {
             this.collideWithPlayer();
-        } else {
-            let normal = Vector2.subtract(this.position, collisionInfo.nearestPoint).nomalize();
-            // 공이 좌우로만 움직이는 걸 방지하기 위해
-            // 박스 모서리에 부딪혀도 y방향만 바뀌도록 함.
-            if (normal.x != 0 && normal.y != 0)
-                normal.y = 0;
-            let newSpeed = Vector2.reflect(this.speed, normal);
-            this.speed = newSpeed;
+        } else if (collisionInfo.component instanceof Mob || collisionInfo.component == "wall") {
+            if (collisionInfo.nearestPoint == "left" && this.speed.x < 0)
+                this.speed.x *= -1;
+            else if (collisionInfo.nearestPoint == "right" && this.speed.x > 0)
+                this.speed.x *= -1;
+            if (collisionInfo.nearestPoint == "up" && this.speed.y < 0)
+                this.speed.y *= -1;
+            else if (collisionInfo.nearestPoint == "down" && this.speed.y > 0)
+                this.speed.y *= -1;
         }
     }
 
@@ -473,14 +473,14 @@ class Box extends ComponentObject {
 
     checkWallCollision() {
         if (this.position.x <= this.width / 2 && this.owner.speed.x < 0) {  // 왼쪽 벽
-            this.owner.processCollision(new CollisionInfo(true, null, "left-wall"));
+            this.processCollision(new CollisionInfo(true, "left", "wall"));
         }
         else if (GAME_WIDTH - this.position.x <= this.width / 2 && this.owner.speed.x > 0) {  // 오른쪽 벽
-            this.owner.processCollision(new CollisionInfo(true, null, "right-wall"));
+            this.processCollision(new CollisionInfo(true, "right", "wall"));
         }
 
         if (this.position.y <= this.height && this.owner.speed.y < 0) {  // 위쪽 벽과 충돌 계산
-            this.owner.processCollision(new CollisionInfo(true, null, "up-wall"));
+            this.processCollision(new CollisionInfo(true, "up", "wall"));
         }
     }
 
@@ -676,10 +676,10 @@ class Mob extends ComponentObject {
             // 넉백
             let newSpeed = Vector2.subtract(this.position, collisionInfo.nearestPoint).setLength(collisionInfo.component.speed.getLength());
             this.speed = newSpeed;
-        } else if (typeof collisionInfo.component == "string") {
-            if (collisionInfo.component == "left-wall" || collisionInfo.component == "right-wall")
+        } else if (collisionInfo.component == "wall") {
+            if (collisionInfo.nearestPoint == "left" || collisionInfo.nearestPoint == "right")
                 this.speed.x *= -1;
-            if (collisionInfo.component == "up-wall")
+            if (collisionInfo.nearestPoint == "up")
                 this.speed.y *= -1;
         }
     }
