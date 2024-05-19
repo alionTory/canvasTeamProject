@@ -416,6 +416,10 @@ class PlayerBall extends ComponentObject {
 
 }
 
+/**
+ * 플레이어의 공 발사각을 설정하고
+ * 발사각을 나타내는 화살표를 그리는 Component
+ */
 class PlayerLaunchAngleArrow extends Component {
     length;
     radianLimit;
