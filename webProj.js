@@ -449,6 +449,9 @@ class PlayerBall extends ComponentObject {
     parryingCount;
     parryingCheckTimeLeft;  // 플레이어가 충돌 이벤트 발생 이후에 클릭한 경우 패링을 검사하기 위한 필드.
     ignoreCollideWithPlayer;  // 플레이어와 충돌한 뒤에 일정 시간동안 플레이어와 충돌하지 않도록 함.
+    // 공이 플레이어와 부딪힌 뒤 몇 개의 블럭을 부수었는지 기록. 일정 개수 이상의 블록을 부수면 강화됨.
+    // 주의 : 강화되는 순간 brokenBlockCount는 0으로 초기화됨. 따라서 실제 부순 블록 개수와는 달라질 수 있음.
+    brokenBlockCount;  
 
     constructor(game, player) {
         super(game);
@@ -470,6 +473,7 @@ class PlayerBall extends ComponentObject {
         this.opacity = 0;
         this.parryingCount = 0;
         this.parryingCheckTimeLeft = 0;
+        this.brokenBlockCount = 0;
     }
 
     update(delta) {
@@ -531,6 +535,9 @@ class PlayerBall extends ComponentObject {
                 this.speed.y *= -1;
             else if (collisionInfo.nearestPoint == "down" && this.speed.y > 0)
                 this.speed.y *= -1;
+
+            if (collisionInfo.component instanceof Mob)
+                this.addBrokenBlockCount();
         }
     }
 
@@ -539,6 +546,7 @@ class PlayerBall extends ComponentObject {
             return;
 
         this.updateParrying();
+        this.brokenBlockCount = 0;
         let launchDirection = Vector2.subtract(fixedCursorPosition, this.position);
         launchDirection.setLength(this.launchSpeed);
         this.setSpeed(launchDirection);
@@ -580,11 +588,9 @@ class PlayerBall extends ComponentObject {
 
             if (this.game.player.isParrying) {
                 this.parryingSuccess();
-                this.speed.setLength(this.launchSpeed);
                 this.parryingCheckTimeLeft = 0;
             } else if (this.parryingCheckTimeLeft <= 0) {
                 this.parryingFailed();
-                this.speed.setLength(this.launchSpeed);
             }
         }
     }
@@ -602,6 +608,20 @@ class PlayerBall extends ComponentObject {
             case "reinforced":
                 this.launchSpeed = this.launchSpeedList[2];
                 break;
+        }
+        this.speed.setLength(this.launchSpeed);
+    }
+
+    // normal 상태일 때 블럭 5개를 부수면 reinforcing 상태가 됨. brokenBlockCount는 0으로 초기화.
+    // reinforcing 상태일 때 블럭 8개를 부수면 reinforced 상태가 됨. brokenBlockCount는 0으로 초기화.
+    addBrokenBlockCount() {
+        this.brokenBlockCount++;
+        if(this.brokenBlockCount >= 5 &&this.state == "normal") {
+            this.setState("reinforcing");
+            this.brokenBlockCount = 0;
+        } else if (this.brokenBlockCount >= 10 && this.state == "reinforcing") {
+            this.setState("reinforced");
+            this.brokenBlockCount = 0;
         }
     }
 
@@ -801,7 +821,7 @@ class Box extends ComponentObject {
 
     }
 
-    doAttack(){}
+    doAttack() { }
 }
 
 class NormalBox extends Box {
@@ -1000,7 +1020,7 @@ class Mob extends ComponentObject {
 }
 
 function mobMaker(mob, data) {  // o core / n normal / b barrier / c cannon / m machinegun / l lazer / other none
-                                // 대문자 -> 박스 뒤에 불 나옴
+    // 대문자 -> 박스 뒤에 불 나옴
     let coreIdx;
 
     //코어의 위치를 찾음.
@@ -1015,24 +1035,24 @@ function mobMaker(mob, data) {  // o core / n normal / b barrier / c cannon / m 
     //박스 만들기
     for (let i = 0; i < data.length; i++) {
         for (let j = 0; j < data[i].length; j++) {
-            
-            let ralativeVec = Vector2.subtract(new Vector2(j*30, i*30), coreIdx);
 
-            switch(data[i][j]) {
-                case "O": mob.boxList.push(new CoreBox(mob.game, new Vector2(0,0), mob, true)); break;
+            let ralativeVec = Vector2.subtract(new Vector2(j * 30, i * 30), coreIdx);
+
+            switch (data[i][j]) {
+                case "O": mob.boxList.push(new CoreBox(mob.game, new Vector2(0, 0), mob, true)); break;
                 case "N": mob.boxList.push(new NormalBox(mob.game, ralativeVec, mob, true)); break;
                 case "B": mob.boxList.push(new BarrierBox(mob.game, ralativeVec, mob, true)); break;
                 case "C": mob.boxList.push(new CannonBox(mob.game, ralativeVec, mob, true)); break;
                 case "M": mob.boxList.push(new MachinegunBox(mob.game, ralativeVec, mob, true)); break;
                 case "L": mob.boxList.push(new LazerBox(mob.game, ralativeVec, mob, true)); break;
 
-                case "o": mob.boxList.push(new CoreBox(mob.game, new Vector2(0,0), mob)); break;
+                case "o": mob.boxList.push(new CoreBox(mob.game, new Vector2(0, 0), mob)); break;
                 case "n": mob.boxList.push(new NormalBox(mob.game, ralativeVec, mob)); break;
                 case "b": mob.boxList.push(new BarrierBox(mob.game, ralativeVec, mob)); break;
                 case "c": mob.boxList.push(new CannonBox(mob.game, ralativeVec, mob)); break;
                 case "m": mob.boxList.push(new MachinegunBox(mob.game, ralativeVec, mob)); break;
                 case "l": mob.boxList.push(new LazerBox(mob.game, ralativeVec, mob)); break;
-                
+
                 default: break;
             }
         }
@@ -1044,8 +1064,8 @@ class Mob_pawn extends Mob {
     constructor(game, position) {
         super(game, position);
 
-        this.data =  [["O"]
-                     ,["c"]];
+        this.data = [["O"]
+            , ["c"]];
 
         mobMaker(this, this.data);
 
@@ -1062,9 +1082,9 @@ class Mob_knight extends Mob {
     constructor(game, position) {
         super(game, position);
 
-        this.data =  
-        [["c","O","c"]    
-        ,[" ","c"," "]];
+        this.data =
+            [["c", "O", "c"]
+                , [" ", "c", " "]];
 
         mobMaker(this, this.data);
 
@@ -1082,11 +1102,11 @@ class Mob_bishop extends Mob {
     constructor(game, position) {
         super(game, position);
 
-        this.data =  
-        [["M"," ","N"," ","M"]
-        ,["n","n","o","n","n"]
-        ,["m"," ","b"," ","m"]
-        ,[" "," ","n"," "," "]]
+        this.data =
+            [["M", " ", "N", " ", "M"]
+                , ["n", "n", "o", "n", "n"]
+                , ["m", " ", "b", " ", "m"]
+                , [" ", " ", "n", " ", " "]]
 
         mobMaker(this, this.data);
 
@@ -1103,11 +1123,11 @@ class Mob_rook extends Mob {
     constructor(game, position) {
         super(game, position);
 
-        this.data =  
-        [["N","L","N"]
-        ,["n","O","n"]
-        ,["n","b","n"]
-        ,["n","n","n"]]
+        this.data =
+            [["N", "L", "N"]
+                , ["n", "O", "n"]
+                , ["n", "b", "n"]
+                , ["n", "n", "n"]]
 
         mobMaker(this, this.data);
 
@@ -1125,34 +1145,34 @@ class Mob_qween extends Mob {
         super(game, position);
 
         this.data =  //11 * 28
-        [[" "," ","B","B","B","B","B","B","B"," "," "] 
-        ,["b","b","b"," "," "," "," "," ","b","b","b"]
-        ,["b"," "," "," "," "," "," "," "," "," ","b"]
-        ,["b"," ","n","n","n","n","n","n","n"," ","b"]
-        ,["b"," ","n","m","n","n","n","m","n"," ","b"]
-        ,["b"," ","n","n","c","n","c","n","n"," ","b"]
-        ,["b","l","n","n","n","o","n","n","n","l","b"]
-        ,["b"," ","n","n","c","n","c","n","n"," ","b"]
-        ,["b"," ","n","m","n","n","n","m","n"," ","b"]
-        ,["b"," ","n","n","n","n","n","n","n"," ","b"]
-        ,["b"," "," "," "," "," "," "," "," "," ","b"]
-        ,["b","l","c","n","n"," ","n","n","c","l","b"]
-        ,["b"," "," "," "," "," "," "," "," "," ","b"]
-        ,["b"," ","m","n","n"," ","n","n","m"," ","b"]
-        ,["b"," "," "," "," "," "," "," "," "," ","b"]
-        ,["b"," ","c","n","n"," ","n","n","c"," ","b"]
-        ,["b","l"," "," "," "," "," "," "," ","l","b"]
-        ,["b"," ","m","n","n"," ","n","n","m"," ","b"]
-        ,["b"," "," "," "," "," "," "," "," "," ","b"]
-        ,["b"," ","c","n","n"," ","n","n","c"," ","b"]
-        ,["b"," "," "," "," "," "," "," "," "," ","b"]
-        ,["b","l","m","n","n"," ","n","n","m","l","b"]
-        ,["b","n"," "," "," "," "," "," "," ","n","b"]
-        ,[" ","b","c"," "," "," "," "," ","c","b"," "]
-        ,[" "," ","b","n"," "," "," ","n","b"," "," "]
-        ,[" "," "," ","b","c","n","c","b"," "," "," "]
-        ,[" "," "," "," ","b","n","b"," "," "," "," "]
-        ,[" "," "," "," "," ","b"," "," "," "," "," "]];
+            [[" ", " ", "B", "B", "B", "B", "B", "B", "B", " ", " "]
+                , ["b", "b", "b", " ", " ", " ", " ", " ", "b", "b", "b"]
+                , ["b", " ", " ", " ", " ", " ", " ", " ", " ", " ", "b"]
+                , ["b", " ", "n", "n", "n", "n", "n", "n", "n", " ", "b"]
+                , ["b", " ", "n", "m", "n", "n", "n", "m", "n", " ", "b"]
+                , ["b", " ", "n", "n", "c", "n", "c", "n", "n", " ", "b"]
+                , ["b", "l", "n", "n", "n", "o", "n", "n", "n", "l", "b"]
+                , ["b", " ", "n", "n", "c", "n", "c", "n", "n", " ", "b"]
+                , ["b", " ", "n", "m", "n", "n", "n", "m", "n", " ", "b"]
+                , ["b", " ", "n", "n", "n", "n", "n", "n", "n", " ", "b"]
+                , ["b", " ", " ", " ", " ", " ", " ", " ", " ", " ", "b"]
+                , ["b", "l", "c", "n", "n", " ", "n", "n", "c", "l", "b"]
+                , ["b", " ", " ", " ", " ", " ", " ", " ", " ", " ", "b"]
+                , ["b", " ", "m", "n", "n", " ", "n", "n", "m", " ", "b"]
+                , ["b", " ", " ", " ", " ", " ", " ", " ", " ", " ", "b"]
+                , ["b", " ", "c", "n", "n", " ", "n", "n", "c", " ", "b"]
+                , ["b", "l", " ", " ", " ", " ", " ", " ", " ", "l", "b"]
+                , ["b", " ", "m", "n", "n", " ", "n", "n", "m", " ", "b"]
+                , ["b", " ", " ", " ", " ", " ", " ", " ", " ", " ", "b"]
+                , ["b", " ", "c", "n", "n", " ", "n", "n", "c", " ", "b"]
+                , ["b", " ", " ", " ", " ", " ", " ", " ", " ", " ", "b"]
+                , ["b", "l", "m", "n", "n", " ", "n", "n", "m", "l", "b"]
+                , ["b", "n", " ", " ", " ", " ", " ", " ", " ", "n", "b"]
+                , [" ", "b", "c", " ", " ", " ", " ", " ", "c", "b", " "]
+                , [" ", " ", "b", "n", " ", " ", " ", "n", "b", " ", " "]
+                , [" ", " ", " ", "b", "c", "n", "c", "b", " ", " ", " "]
+                , [" ", " ", " ", " ", "b", "n", "b", " ", " ", " ", " "]
+                , [" ", " ", " ", " ", " ", "b", " ", " ", " ", " ", " "]];
 
         mobMaker(this, this.data);
         this.movingSpeed = new Vector2(0, 15);
@@ -1160,7 +1180,7 @@ class Mob_qween extends Mob {
     }
 
     draw() {
-        this.game.ctx.drawImage(img_qweenBody, this.position.x -225  , this.position.y - 255);
+        this.game.ctx.drawImage(img_qweenBody, this.position.x - 225, this.position.y - 255);
     }
 }
 
@@ -1169,11 +1189,11 @@ class Mob_king extends Mob {
     constructor(game, position) {
         super(game, position);
 
-        this.data =  
-        [["N","L","N"]
-        ,["n","O","n"]
-        ,["n","b","n"]
-        ,["n","n","n"]]
+        this.data =
+            [["N", "L", "N"]
+                , ["n", "O", "n"]
+                , ["n", "b", "n"]
+                , ["n", "n", "n"]]
 
         mobMaker(this, this.data);
 
