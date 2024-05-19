@@ -91,7 +91,6 @@ class Game {
     playerBall;
 
     coin;
-    heart;
     mobList;
 
     constructor(ctx) {
@@ -108,7 +107,6 @@ class Game {
         requestAnimationFrame(this.runLoop.bind(this));
 
         this.coin = 0;
-        this.heart = 1000;
     }
 
     loadComponents() {
@@ -236,18 +234,8 @@ class Game {
         }
     }
 
-    ballMissed() {
-        //공 위치 초기화
-        this.playerBall.speed = new Vector2(0, 40);
-        this.playerBall.position = new Vector2(GAME_WIDTH / 2, GAME_HEIGHT - 150);
-        this.playerHurt(330);
-    }
-
-    playerHurt(dmg) {
-        console.log("heart : "+( this.heart -= dmg) + "(-" + dmg + ")");
-    }
     addCoin(toAddCoin) {
-        console.log("coin : "+( this.coin += toAddCoin) + "(+" + toAddCoin + ")");
+        console.log("coin : " + (this.coin += toAddCoin) + "(+" + toAddCoin + ")");
     }
 
     gameEnd() {
@@ -330,6 +318,7 @@ class Player extends ComponentObject {
     maxSpeed;
     launchDirection;
     radianLimit
+    heart
     constructor(game) {
         super(game);
         this.width = 81;
@@ -337,6 +326,7 @@ class Player extends ComponentObject {
         this.maxSpeed = 500;
         this.launchDirection = new Vector2(0, -1);
         this.radianLimit = Math.PI / 6;
+        this.heart = 1000;
         this.position.set(GAME_WIDTH / 2, GAME_HEIGHT - this.height / 2 - 10);
         this.shape = new ShapeAABB(this, new Vector2(), new Vector2());
         game.collideablesWithBall.push(this);
@@ -383,6 +373,10 @@ class Player extends ComponentObject {
         return cursorPositionParam;
     }
 
+    playerHurt(dmg) {
+        console.log("heart : " + (this.heart -= dmg) + "(-" + dmg + ")");
+    }
+
     draw(ctx) {
         ctx.drawImage(img_player, this.position.x - 46.5, this.position.y - 10.5);
         if (this.game.previousTicks % 100 > 50) {
@@ -400,26 +394,52 @@ class Player extends ComponentObject {
 class PlayerBall extends ComponentObject {
     player;
     radius;
+    state;  // "generating", "normal"
+    generatingDelay;
+    leftTimeForGenerating;
+    opacity;
     launchSpeed;
-    minYSpeed;
     ignoreCollideWithPlayer;  // 플레이어와 충돌한 뒤에 일정 시간동안 플레이어와 충돌하지 않도록 함.
+
     constructor(game, player) {
         super(game);
         this.player = player;
         this.radius = 10;
+        this.generatingDelay = 2;
         this.launchSpeed = 500;
-        this.minYSpeed = 100;
-        this.ignoreCollideWithPlayer = false;
-        this.position.set(player.position.x, player.position.y + this.radius + player.height / 2);
+        this.init();
+    }
+
+    init() {
+        this.position.set(this.player.position.x, this.player.position.y + this.radius + this.player.height / 2);
         this.shape = new ShapeCircle(this, this.position, this.radius);
+        this.speed.set(0, 0);
+        this.ignoreCollideWithPlayer = false;
+        this.state = "generating";
+        this.leftTimeForGenerating = this.generatingDelay;
+        this.opacity = 0;
     }
 
     update(delta) {
-        this.checkWallCollision();
+        if (this.state == "generating") {
+            this.leftTimeForGenerating -= delta;
+            if (this.leftTimeForGenerating < 0)
+                this.leftTimeForGenerating = 0;
 
-        for (let collideable of this.game.collideablesWithBall) {
-            if (this.game.components.indexOf(collideable) >= 0)
-                ComponentObject.checkCollision(this, collideable);
+            this.opacity = 1 - this.leftTimeForGenerating / this.generatingDelay;
+            this.position.set(this.player.position.x, this.player.position.y - this.radius - this.player.height / 2);
+            if (this.leftTimeForGenerating == 0) {
+                this.state = "normal";
+            }
+
+        } else if (this.state == "normal") {
+            this.checkWallCollision();
+            for (let collideable of this.game.collideablesWithBall) {
+                if (this.game.components.indexOf(collideable) >= 0)
+                    ComponentObject.checkCollision(this, collideable);
+            }
+
+            this.checkBallMissed();
         }
 
         super.update(delta);
@@ -443,9 +463,6 @@ class PlayerBall extends ComponentObject {
         }
         if (this.position.y <= this.radius) {  // 위쪽 벽과 충돌
             this.processCollision(new CollisionInfo(true, "up", "wall"));
-        }
-        if (this.position.y >= this.radius + GAME_HEIGHT) {  // 공 놓침
-            this.game.ballMissed();
         }
     }
 
@@ -474,6 +491,14 @@ class PlayerBall extends ComponentObject {
         this.ignoreCollideWithPlayer = true;
     }
 
+    checkBallMissed() {
+        if (this.position.y >= this.radius + GAME_HEIGHT) {  // 공 놓침
+            this.player.playerHurt(330);
+            this.init();
+        }
+    }
+
+
     // 공의 최소 y좌표 속도 보장하려는 용도. 부자연스러워서 삭제함
     /*applyMinYSpeed() {
         if (-this.minYSpeed < this.speed.y && this.speed.y < this.minYSpeed) {
@@ -490,7 +515,9 @@ class PlayerBall extends ComponentObject {
     }*/
 
     draw(ctx) {
+        ctx.globalAlpha = this.opacity;
         ctx.drawImage(img_playerBall, this.position.x - 30, this.position.y - 30);
+        ctx.globalAlpha = 1;
     }
 
 }
@@ -587,7 +614,7 @@ class Box extends ComponentObject {
         }
     }
 
-    doAttack(){};
+    doAttack() { };
 
     destroyBox() {
         let toAddCoin = 0;
@@ -694,7 +721,7 @@ class CannonBox extends Box {
     }
 
     doAttack() {
-    new Cannon(this.game, this);
+        new Cannon(this.game, this);
     }
 }
 
@@ -765,7 +792,7 @@ class Mob extends ComponentObject {
         this.prepareAtk = 1000;
 
         this.drawOrder = 40;
-        setTimeout(this.attack.bind(this), this.prepareAtk );
+        setTimeout(this.attack.bind(this), this.prepareAtk);
     }
 
     processCollision(collisionInfo) {
@@ -790,7 +817,7 @@ class Mob extends ComponentObject {
     attack() {
         let tmp = 0;
         for (let box of this.boxList) {
-            setTimeout(function(){box.interval = setInterval(box.doAttack.bind(box), box.coolTime)}, tmp);
+            setTimeout(function () { box.interval = setInterval(box.doAttack.bind(box), box.coolTime) }, tmp);
             tmp += this.atkGap;
         }
     }
