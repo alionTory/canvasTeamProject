@@ -13,6 +13,7 @@ var img_pawnBody = new Image(); img_pawnBody.src = "imgFolder/pawnBody.png";
 var img_knightBody = new Image(); img_knightBody.src = "imgFolder/knightBody.png";
 var img_bishopBody = new Image(); img_bishopBody.src = "imgFolder/bishopBody.png";
 var img_rookBody = new Image(); img_rookBody.src = "imgFolder/rookBody.png";
+var img_qweenBody = new Image(); img_qweenBody.src = "imgFolder/qweenBody.png";
 
 var img_lazer = new Image(); img_lazer.src = "imgFolder/lazer.png";
 var img_bullet = new Image(); img_bullet.src = "imgFolder/bullet.png";
@@ -94,7 +95,7 @@ class Game {
     mobList;
 
     constructor(ctx) {
-        this.level = 1; // 임시
+        this.level = 3; // 임시
 
         this.ctx = ctx;
         this.fps = 60;
@@ -208,13 +209,7 @@ class Game {
                 break;
 
             case 3:
-                this.mobList.push(new Mob_pawn(this, new Vector2(50, 100)));
-                this.mobList.push(new Mob_pawn(this, new Vector2(450, 100)));
-                this.mobList.push(new Mob_pawn(this, new Vector2(50, 300)));
-                this.mobList.push(new Mob_pawn(this, new Vector2(450, 300)));
-                this.mobList.push(new Mob_king(this, new Vector2(250, 300)));
-                this.mobList.push(new Mob_qween(this, new Vector2(250, 100)));
-
+                this.mobList.push(new Mob_qween(this, new Vector2(250, -600)));
                 break;
 
             default:
@@ -561,7 +556,8 @@ class Box extends ComponentObject {
     height;
     owner;
     price;
-    interval;
+
+    createdTick;
 
     constructor(game, relativePosition, width, height, owner = null, boost) {
         super(game);
@@ -576,6 +572,7 @@ class Box extends ComponentObject {
         this.shape = new ShapeAABB(this.owner, new Vector2(), new Vector2());
         this.updateShape();
         this.drawOrder = 50;
+        this.createdTick = this.game.previousTicks;
 
         if (boost) {
             new Anime_boost(this.game, this);
@@ -589,6 +586,7 @@ class Box extends ComponentObject {
         //this.speed = Vector2.copy(this.owner.speed);
         this.position = Vector2.plus(this.owner.position, this.relativePosition);
         super.update(delta);
+        this.doAttack();
     }
 
     checkWallCollision() {
@@ -613,8 +611,6 @@ class Box extends ComponentObject {
         }
     }
 
-    doAttack() { };
-
     destroyBox() {
         let toAddCoin = 0;
         let explodeSize = 60;
@@ -623,7 +619,6 @@ class Box extends ComponentObject {
             for (let b of this.owner.boxList) {
                 this.game.removeComponent(b);
                 toAddCoin += b.price + 20; // 코어 부술 시 추가 코인
-                clearInterval(b.interval); // 공격 멈춤
             }
 
             explodeSize = 120;
@@ -647,7 +642,6 @@ class Box extends ComponentObject {
         else {
             this.game.removeComponent(this);
             toAddCoin += this.price;
-            clearInterval(this.interval); // 공격 멈춤
         }
 
         //코인 얻음
@@ -666,6 +660,8 @@ class Box extends ComponentObject {
     draw(ctx) {
 
     }
+
+    doAttack(){}
 }
 
 class NormalBox extends Box {
@@ -706,7 +702,6 @@ class BarrierBox extends Box {
 }
 
 class CannonBox extends Box {
-    interval;
     coolTime;
 
     constructor(game, position, owner, boost) {
@@ -720,18 +715,22 @@ class CannonBox extends Box {
     }
 
     doAttack() {
-        new Cannon(this.game, this);
+        if (this.game.previousTicks - this.createdTick > this.coolTime && this.position.y > 0) {
+            this.createdTick = this.game.previousTicks;
+            new Cannon(this.game, this);
+        }
     }
 }
 
 class MachinegunBox extends Box {
-    interval;
     coolTime;
+    shootGap;
 
     constructor(game, position, owner, boost) {
         super(game, position, 30, 30, owner, boost);
         this.price = 70;
         this.coolTime = 3000;
+        this.shootGap = 100;
     }
 
     draw(ctx) {
@@ -739,21 +738,22 @@ class MachinegunBox extends Box {
     }
 
     doAttack() {
-        new Bullet(this.game, this);
-        new Bullet(this.game, this);
-        new Bullet(this.game, this);
+        if (this.game.previousTicks - this.createdTick > this.coolTime && this.position.y > 0) {
+            this.createdTick = this.game.previousTicks;
+            new Bullet(this.game, this);
+            new Bullet(this.game, this);
+            new Bullet(this.game, this);
+        }
     }
 }
 
 class LazerBox extends Box {
-    interval;
     coolTime;
 
     constructor(game, position, owner, boost) {
         super(game, position, 30, 30, owner, boost);
         this.price = 100;
-        this.coolTime = 6666;
-        this.interval = setInterval(this.doAttack.bind(this), this.coolTime);
+        this.coolTime = 11111;
     }
 
     draw(ctx) {
@@ -761,12 +761,10 @@ class LazerBox extends Box {
     }
 
     doAttack() {
-        if (this.game.components.indexOf(this) < 0) {
-            clearInterval(this.interval);
-            return;
+        if (this.game.previousTicks - this.createdTick > this.coolTime && this.position.y > 0) {
+            this.createdTick = this.game.previousTicks;
+            new Lazer(this.game, this);
         }
-
-        let lazer = new Lazer(this.game, this);
     }
 }
 
@@ -776,22 +774,23 @@ class Mob extends ComponentObject {
     boxList = [];
     resistance;
     leastSpeed;
+    movingSpeed;
+    data;
 
     arrivalPosY; // 몹이 생성되고 지정된 위치에 도착한다면 느려짐.
 
     prepareAtk;
-    atkGap = 333;
 
     constructor(game, position) {
         super(game);
-        this.leastSpeed = new Vector2(0, 300); //몹의 이속
+        this.leastSpeed = new Vector2(0, 300); // 몹이 추구하는 속도
+        this.movingSpeed = new Vector2(0, 5); // 몹이 맵에 도착하면 leastSpeed를 이것으로 바꿀것임
         this.position = new Vector2(position.x, position.y - 700);
         this.arrivalPosY = position.y;
 
         this.prepareAtk = 1000;
 
         this.drawOrder = 40;
-        setTimeout(this.attack.bind(this), this.prepareAtk);
     }
 
     processCollision(collisionInfo) {
@@ -813,18 +812,10 @@ class Mob extends ComponentObject {
         this.isArrived();
     }
 
-    attack() {
-        let tmp = 0;
-        for (let box of this.boxList) {
-            setTimeout(function () { box.interval = setInterval(box.doAttack.bind(box), box.coolTime) }, tmp);
-            tmp += this.atkGap;
-        }
-    }
-
     isArrived() {
         // 맵 내부로 도착했는가
         if (this.position.y >= this.arrivalPosY) {
-            this.leastSpeed = new Vector2(0, 5);
+            this.leastSpeed = this.movingSpeed;
         }
 
         // 맵 끝으로 가버렸는가
@@ -868,14 +859,55 @@ class Mob extends ComponentObject {
     }
 }
 
+function mobMaker(mob, data) {  // o core / n normal / b barrier / c cannon / m machinegun / l lazer / other none
+                                // 대문자 -> 박스 뒤에 불 나옴
+    let coreIdx;
+
+    //코어의 위치를 찾음.
+    for (let i = 0; i < data.length; i++) {
+        for (let j = 0; j < data[i].length; j++) {
+            if (data[i][j] == "O" || data[i][j] == "o") {
+                coreIdx = new Vector2(j * 30, i * 30);
+            }
+        }
+    }
+
+    //박스 만들기
+    for (let i = 0; i < data.length; i++) {
+        for (let j = 0; j < data[i].length; j++) {
+            
+            let ralativeVec = Vector2.subtract(new Vector2(j*30, i*30), coreIdx);
+
+            switch(data[i][j]) {
+                case "O": mob.boxList.push(new CoreBox(mob.game, new Vector2(0,0), mob, true)); break;
+                case "N": mob.boxList.push(new NormalBox(mob.game, ralativeVec, mob, true)); break;
+                case "B": mob.boxList.push(new BarrierBox(mob.game, ralativeVec, mob, true)); break;
+                case "C": mob.boxList.push(new CannonBox(mob.game, ralativeVec, mob, true)); break;
+                case "M": mob.boxList.push(new MachinegunBox(mob.game, ralativeVec, mob, true)); break;
+                case "L": mob.boxList.push(new LazerBox(mob.game, ralativeVec, mob, true)); break;
+
+                case "o": mob.boxList.push(new CoreBox(mob.game, new Vector2(0,0), mob)); break;
+                case "n": mob.boxList.push(new NormalBox(mob.game, ralativeVec, mob)); break;
+                case "b": mob.boxList.push(new BarrierBox(mob.game, ralativeVec, mob)); break;
+                case "c": mob.boxList.push(new CannonBox(mob.game, ralativeVec, mob)); break;
+                case "m": mob.boxList.push(new MachinegunBox(mob.game, ralativeVec, mob)); break;
+                case "l": mob.boxList.push(new LazerBox(mob.game, ralativeVec, mob)); break;
+                
+                default: break;
+            }
+        }
+    }
+}
+
 class Mob_pawn extends Mob {
 
     constructor(game, position) {
         super(game, position);
 
+        this.data =  [["O"]
+                     ,["c"]];
 
-        this.boxList.push(new CoreBox(game, new Vector2(), this, true));
-        this.boxList.push(new CannonBox(game, new Vector2(0, 30), this));
+        mobMaker(this, this.data);
 
         this.resistance = 1000;
     }
@@ -890,10 +922,11 @@ class Mob_knight extends Mob {
     constructor(game, position) {
         super(game, position);
 
-        this.boxList.push(new CoreBox(game, new Vector2(), this, true));
-        this.boxList.push(new BarrierBox(game, new Vector2(0, 30), this));
-        this.boxList.push(new CannonBox(game, new Vector2(-30, 0), this));
-        this.boxList.push(new CannonBox(game, new Vector2(30, 0), this));
+        this.data =  
+        [["c","O","c"]    
+        ,[" ","c"," "]];
+
+        mobMaker(this, this.data);
 
         this.resistance = 1500;
 
@@ -909,18 +942,13 @@ class Mob_bishop extends Mob {
     constructor(game, position) {
         super(game, position);
 
-        this.boxList.push(new CoreBox(game, new Vector2(), this));
-        this.boxList.push(new BarrierBox(game, new Vector2(0, 30), this));
-        this.boxList.push(new NormalBox(game, new Vector2(0, 60), this));
-        this.boxList.push(new NormalBox(game, new Vector2(30, 0), this));
-        this.boxList.push(new NormalBox(game, new Vector2(60, 0), this));
-        this.boxList.push(new NormalBox(game, new Vector2(-30, 0), this));
-        this.boxList.push(new NormalBox(game, new Vector2(-60, 0), this));
-        this.boxList.push(new NormalBox(game, new Vector2(0, -30), this, true));
-        this.boxList.push(new MachinegunBox(game, new Vector2(60, 30), this));
-        this.boxList.push(new MachinegunBox(game, new Vector2(60, -30), this, true));
-        this.boxList.push(new MachinegunBox(game, new Vector2(-60, 30), this));
-        this.boxList.push(new MachinegunBox(game, new Vector2(-60, -30), this, true));
+        this.data =  
+        [["M"," ","N"," ","M"]
+        ,["n","n","o","n","n"]
+        ,["m"," ","b"," ","m"]
+        ,[" "," ","n"," "," "]]
+
+        mobMaker(this, this.data);
 
         this.resistance = 1800;
     }
@@ -935,18 +963,13 @@ class Mob_rook extends Mob {
     constructor(game, position) {
         super(game, position);
 
-        this.boxList.push(new CoreBox(game, new Vector2(), this));
-        this.boxList.push(new BarrierBox(game, new Vector2(0, 30), this));
-        this.boxList.push(new NormalBox(game, new Vector2(0, 60), this));
-        this.boxList.push(new NormalBox(game, new Vector2(30, -30), this, true));
-        this.boxList.push(new NormalBox(game, new Vector2(30, 0), this));
-        this.boxList.push(new NormalBox(game, new Vector2(30, 30), this));
-        this.boxList.push(new NormalBox(game, new Vector2(30, 60), this));
-        this.boxList.push(new NormalBox(game, new Vector2(-30, -30), this, true));
-        this.boxList.push(new NormalBox(game, new Vector2(-30, 0), this));
-        this.boxList.push(new NormalBox(game, new Vector2(-30, 30), this));
-        this.boxList.push(new NormalBox(game, new Vector2(-30, 60), this));
-        this.boxList.push(new LazerBox(game, new Vector2(0, -30), this, true));
+        this.data =  
+        [["N","L","N"]
+        ,["n","O","n"]
+        ,["n","b","n"]
+        ,["n","n","n"]]
+
+        mobMaker(this, this.data);
 
         this.resistance = 1800;
     }
@@ -961,22 +984,43 @@ class Mob_qween extends Mob {
     constructor(game, position) {
         super(game, position);
 
-        for (let i = -1; i < 2; i++) {
-            for (let j = -2; j < 3; j++) {
-                if (i == 0 && j == 0) {
-                    this.boxList.push(new CoreBox(game, new Vector2(), this));
-                    continue;
-                }
+        this.data =  //11 * 28
+        [[" "," ","B","B","B","B","B","B","B"," "," "] 
+        ,["b","b","b"," "," "," "," "," ","b","b","b"]
+        ,["b"," "," "," "," "," "," "," "," "," ","b"]
+        ,["b"," ","n","n","n","n","n","n","n"," ","b"]
+        ,["b"," ","n","m","n","n","n","m","n"," ","b"]
+        ,["b"," ","n","n","c","n","c","n","n"," ","b"]
+        ,["b","l","n","n","n","o","n","n","n","l","b"]
+        ,["b"," ","n","n","c","n","c","n","n"," ","b"]
+        ,["b"," ","n","m","n","n","n","m","n"," ","b"]
+        ,["b"," ","n","n","n","n","n","n","n"," ","b"]
+        ,["b"," "," "," "," "," "," "," "," "," ","b"]
+        ,["b","l","c","n","n"," ","n","n","c","l","b"]
+        ,["b"," "," "," "," "," "," "," "," "," ","b"]
+        ,["b"," ","m","n","n"," ","n","n","m"," ","b"]
+        ,["b"," "," "," "," "," "," "," "," "," ","b"]
+        ,["b"," ","c","n","n"," ","n","n","c"," ","b"]
+        ,["b","l"," "," "," "," "," "," "," ","l","b"]
+        ,["b"," ","m","n","n"," ","n","n","m"," ","b"]
+        ,["b"," "," "," "," "," "," "," "," "," ","b"]
+        ,["b"," ","c","n","n"," ","n","n","c"," ","b"]
+        ,["b"," "," "," "," "," "," "," "," "," ","b"]
+        ,["b","l","m","n","n"," ","n","n","m","l","b"]
+        ,["b","n"," "," "," "," "," "," "," ","n","b"]
+        ,[" ","b","c"," "," "," "," "," ","c","b"," "]
+        ,[" "," ","b","n"," "," "," ","n","b"," "," "]
+        ,[" "," "," ","b","c","n","c","b"," "," "," "]
+        ,[" "," "," "," ","b","n","b"," "," "," "," "]
+        ,[" "," "," "," "," ","b"," "," "," "," "," "]];
 
-                else this.boxList.push(new MachinegunBox(game, new Vector2(i * 30, j * 30), this));
-            }
-        }
-
-        this.resistance = 9000;
+        mobMaker(this, this.data);
+        this.movingSpeed = new Vector2(0, 15);
+        this.resistance = 10000000;
     }
 
     draw() {
-        //this.game.ctx.drawImage(img_rookBody, this.position.x -105  , this.position.y - 75);
+        this.game.ctx.drawImage(img_qweenBody, this.position.x -225  , this.position.y - 255);
     }
 }
 
@@ -985,16 +1029,13 @@ class Mob_king extends Mob {
     constructor(game, position) {
         super(game, position);
 
-        for (let i = -2; i < 3; i++) {
-            for (let j = -2; j < 4; j++) {
-                if (i == 0 && j == 0) {
-                    this.boxList.push(new CoreBox(game, new Vector2(), this));
-                    continue;
-                }
+        this.data =  
+        [["N","L","N"]
+        ,["n","O","n"]
+        ,["n","b","n"]
+        ,["n","n","n"]]
 
-                else this.boxList.push(new BarrierBox(game, new Vector2(i * 30, j * 30), this));
-            }
-        }
+        mobMaker(this, this.data);
 
         this.resistance = 9000;
     }
