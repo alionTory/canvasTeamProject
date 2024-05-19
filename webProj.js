@@ -1,5 +1,6 @@
 const gameInput = { left: false, right: false, click: false };
 let cursorPosition = null;
+let fixedCursorPosition = null;
 
 var img_normalBox = new Image(); img_normalBox.src = "imgFolder/normalBox.png";
 var img_cannonBox = new Image(); img_cannonBox.src = "imgFolder/cannonBox.png";
@@ -314,12 +315,14 @@ class Player extends ComponentObject {
     height;
     maxSpeed;
     launchDirection;
+    radianLimit
     constructor(game) {
         super(game);
         this.width = 81;
         this.height = 9;
         this.maxSpeed = 500;
         this.launchDirection = new Vector2(0, -1);
+        this.radianLimit = Math.PI / 6;
         this.position.set(GAME_WIDTH / 2, GAME_HEIGHT - this.height / 2 - 10);
         this.shape = new ShapeAABB(this, new Vector2(), new Vector2());
         game.collideablesWithBall.push(this);
@@ -339,6 +342,31 @@ class Player extends ComponentObject {
         } else {
             this.speed.set(0, 0);
         }
+        this.fixCursorPosition();
+    }
+
+    fixCursorPosition() {
+        let vectorToCursor = Vector2.subtract(cursorPosition, this.position);
+        let length = vectorToCursor.getLength();
+
+        let radian = vectorToCursor.toRadian();
+        if (-this.radianLimit < radian && radian < Math.PI / 2)
+            radian = -this.radianLimit;
+        if (Math.PI / 2 < radian || radian < this.radianLimit - Math.PI)
+            radian = this.radianLimit - Math.PI;
+
+        vectorToCursor = Vector2.fromRadian(radian).setLength(length);
+        fixedCursorPosition = this.moveVectorToCursorInsideCanvas(vectorToCursor.plus(this.position));
+    }
+
+    moveVectorToCursorInsideCanvas(cursorPositionParam) {
+        if (cursorPositionParam.x < 0)
+            cursorPositionParam.x = 0;
+        if (GAME_WIDTH < cursorPositionParam.x)
+            cursorPositionParam.x = GAME_WIDTH;
+        if (cursorPositionParam.y < 0)
+            cursorPositionParam.y = 0;
+        return cursorPositionParam;
     }
 
     draw(ctx) {
@@ -424,7 +452,7 @@ class PlayerBall extends ComponentObject {
         if (this.ignoreCollideWithPlayer)
             return;
 
-        let launchDirection = Vector2.copy(this.player.launchDirection);
+        let launchDirection = Vector2.subtract(fixedCursorPosition, this.position);
         launchDirection.setLength(this.launchSpeed);
         this.setSpeed(launchDirection);
         this.ignoreCollideWithPlayer = true;
@@ -457,56 +485,25 @@ class PlayerBall extends ComponentObject {
  */
 class PlayerLaunchAngleArrow extends Component {
     length;
-    radianLimit;
     player;
     ball;
-    XposFixer;
     constructor(game, player, ball) {
         super(game);
         this.length = 100;
-        this.radianLimit = Math.PI / 6;
         this.player = player;
         this.ball = ball;
-        this.XposFixer = 0;
     }
 
     update(delta) {
-        let vectorToCursor = Vector2.subtract(cursorPosition, this.player.position);
-        let length = vectorToCursor.getLength();
-
-        // if (Math.abs(this.ball.position.x - this.player.position.x) < this.player.width / 2) {
-        //     this.XposFixer = this.ball.position.x - this.player.position.x;
-        //     vectorToCursor = Vector2.subtract(vectorToCursor, new Vector2(this.XposFixer, 0));
-        // }
-
-        let radian = vectorToCursor.toRadian();
-        if (-this.radianLimit < radian && radian < Math.PI / 2)
-            radian = -this.radianLimit;
-        if (Math.PI / 2 < radian || radian < this.radianLimit - Math.PI)
-            radian = this.radianLimit - Math.PI;
-
-        let arrowDirection = Vector2.fromRadian(radian);
-        //this.player.launchDirection = Vector2.subtract(Vector2.copy(arrowDirection), new Vector2(this.ballDirectionFixer, 0));
-        this.player.launchDirection = Vector2.copy(arrowDirection);
-        vectorToCursor = arrowDirection.setLength(length);
-        this.moveVectorToCursorInsideCanvas(vectorToCursor);
-        this.position = vectorToCursor.plus(this.player.position);
+        this.position = Vector2.copy(fixedCursorPosition);
     }
 
-    moveVectorToCursorInsideCanvas(vectorToCursor) {
-        if (cursorPosition.x < 0)
-            vectorToCursor.multiply(this.player.position.x / (this.player.position.x - cursorPosition.x));
-        if (GAME_WIDTH < cursorPosition.x)
-            vectorToCursor.multiply((this.player.position.x - GAME_WIDTH) / (this.player.position.x - cursorPosition.x));
-        if(cursorPosition.y < 0)
-            vectorToCursor.multiply(this.player.position.y / (this.player.position.y - cursorPosition.y));
-    }
 
     draw(ctx) {
         ctx.beginPath();
         ctx.strokeStyle = "red";
         ctx.setLineDash([5, 5]);
-        ctx.moveTo(this.player.position.x + this.toFixPositionX, this.player.position.y);
+        ctx.moveTo(this.player.position.x, this.player.position.y);
         ctx.lineTo(this.position.x, this.position.y);
         ctx.stroke();
 
