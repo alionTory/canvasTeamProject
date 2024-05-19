@@ -47,6 +47,13 @@ $(function () {
     $(document).on("click", function (event) { console.log(cursorPosition); });
 
     const game = new Game(gameCanvas[0].getContext("2d"));
+
+    $(gameCanvas).hover(
+        function() {
+            gameCanvas.addClass("hide_cursor");
+    }, function() {
+        gameCanvas.removeClass("hide_cursor");
+    });
 });
 
 $(document).on("keydown", function (event) {
@@ -155,13 +162,12 @@ class Game {
     }
     // components 에서 component를 빈 공간이 생기지 않게 삭제.
     removeComponent(component) {
-        if (this.components.indexOf(component) >= 0) {
-            let removeIndex = this.components.indexOf(component);
-            if (removeIndex == -1) {
-                console.error("Game removeComponent() : 배열에 지우려는 component가 없습니다.");
-            }
-            this.components.splice(removeIndex, 1);
+        let removeIndex = this.components.indexOf(component);
+        if (removeIndex == -1) {
+            console.error("Game removeComponent() : 배열에 지우려는 component가 없습니다.");
+            return;  // return문 추가
         }
+        this.components.splice(removeIndex, 1);
     }
 
     levelStarter(level) { // 코어가 부서질 때 레벨을 올릴지 판단할 것.
@@ -182,13 +188,13 @@ class Game {
             }
         }
 
-        switch(level) {
+        switch (level) {
             case 1:
                 this.mobList.push(new Mob_pawn(this, new Vector2(100, 200)));
                 this.mobList.push(new Mob_pawn(this, new Vector2(250, 200)));
                 this.mobList.push(new Mob_pawn(this, new Vector2(400, 200)));
-                this.mobList.push(new Mob_knight(this, new Vector2(250, 80)));   
-            break;
+                this.mobList.push(new Mob_knight(this, new Vector2(250, 80)));
+                break;
 
             case 2:
                 this.mobList.push(new Mob_pawn(this, new Vector2(50, 100)));
@@ -197,7 +203,7 @@ class Game {
                 this.mobList.push(new Mob_rook(this, new Vector2(100, 300)));
                 this.mobList.push(new Mob_rook(this, new Vector2(400, 300)));
                 this.mobList.push(new Mob_bishop(this, new Vector2(250, 100)));
-            break;
+                break;
 
             case 3:
                 this.mobList.push(new Mob_pawn(this, new Vector2(50, 100)));
@@ -207,7 +213,7 @@ class Game {
                 this.mobList.push(new Mob_king(this, new Vector2(250, 300)));
                 this.mobList.push(new Mob_qween(this, new Vector2(250, 100)));
 
-            break;
+                break;
 
             default:
                 this.gameEnd();
@@ -289,13 +295,9 @@ class ComponentObject extends Component {
         if (object1.shape instanceof ShapeCircle) {
             if (object2.shape instanceof ShapeAABB) {
                 let collisionInfo = object1.shape.getCollisionInfo(object2.shape);
-                if (collisionInfo.isCollided) {
-                    collisionInfo.component = object2;
-                    object1.processCollision(collisionInfo);
-
-                    collisionInfo = collisionInfo.copy();
-                    collisionInfo.component = object1;
-                    object2.processCollision(collisionInfo);
+                if (collisionInfo[0].isCollided) {
+                    object2.processCollision(collisionInfo[1]);
+                    object1.processCollision(collisionInfo[0]);
                 }
             }
         }
@@ -307,13 +309,15 @@ class Player extends ComponentObject {
     width;
     height;
     maxSpeed;
+    launchDirection;
     constructor(game) {
         super(game);
         this.width = 81;
         this.height = 9;
         this.maxSpeed = 500;
+        this.launchDirection = new Vector2(0, -1);
         this.position.set(GAME_WIDTH / 2, GAME_HEIGHT - this.height / 2 - 10);
-        this.shape = new ShapeAABB(new Vector2(), new Vector2());
+        this.shape = new ShapeAABB(this, new Vector2(), new Vector2());
         game.collideablesWithBall.push(this);
     }
 
@@ -361,38 +365,16 @@ class PlayerBall extends ComponentObject {
         this.minYSpeed = 100;
         this.ignoreCollideWithPlayer = false;
         this.position.set(player.position.x, player.position.y + this.radius + player.height / 2);
-        this.shape = new ShapeCircle(this.position, this.radius);
+        this.shape = new ShapeCircle(this, this.position, this.radius);
     }
 
     update(delta) {
-        // 벽과의 충돌 계산
-        if (this.position.x <= this.radius && this.speed.x < 0) {  // 왼쪽 벽
-            this.speed.x *= -1;
-        }
-        else if (GAME_WIDTH - this.position.x <= this.radius && this.speed.x > 0) {  // 오른쪽 벽
-            this.speed.x *= -1;
-        }
-
-        if (this.position.y <= this.radius && this.speed.y < 0) {  // 위쪽 벽과 충돌 계산
-            this.speed.y *= -1;
-        }
+        this.checkWallCollision();
 
         for (let collideable of this.game.collideablesWithBall) {
             if (this.game.components.indexOf(collideable) >= 0)
                 ComponentObject.checkCollision(this, collideable);
-            // let collideInfo = this.shape.getCollisionInfo(collideable.shape);
-            // if (collideInfo.isCollided) {
-            //     if (collideable instanceof Player) {
-            //         this.collideWithPlayer();
-            //     } else {
-            //         let normal = Vector2.subtract(this.position, collideInfo.nearestPoint).nomalize();
-            //         let newSpeed = Vector2.reflect(this.speed, normal);
-            //         this.speed = newSpeed;
-            //     }
-            // }
         }
-
-        //this.applyMinYSpeed();
 
         super.update(delta);
 
@@ -406,17 +388,31 @@ class PlayerBall extends ComponentObject {
         this.shape.position = Vector2.copy(this.position);
     }
 
+    checkWallCollision() {
+        if (this.position.x <= this.radius) {  // 왼쪽 벽
+            this.processCollision(new CollisionInfo(true, "left", "wall"));
+        }
+        else if (GAME_WIDTH - this.position.x <= this.radius) {  // 오른쪽 벽
+            this.processCollision(new CollisionInfo(true, "right", "wall"));
+        }
+
+        if (this.position.y <= this.radius) {  // 위쪽 벽과 충돌
+            this.processCollision(new CollisionInfo(true, "up", "wall"));
+        }
+    }
+
     processCollision(collisionInfo) {
         if (collisionInfo.component instanceof Player) {
             this.collideWithPlayer();
-        } else {
-            let normal = Vector2.subtract(this.position, collisionInfo.nearestPoint).nomalize();
-            // 공이 좌우로만 움직이는 걸 방지하기 위해
-            // 박스 모서리에 부딪혀도 y방향만 바뀌도록 함.
-            if (normal.x != 0 && normal.y != 0)
-                normal.y = 0;
-            let newSpeed = Vector2.reflect(this.speed, normal);
-            this.speed = newSpeed;
+        } else if (collisionInfo.component instanceof Mob || collisionInfo.component == "wall") {
+            if (collisionInfo.nearestPoint == "left" && this.speed.x < 0)
+                this.speed.x *= -1;
+            else if (collisionInfo.nearestPoint == "right" && this.speed.x > 0)
+                this.speed.x *= -1;
+            if (collisionInfo.nearestPoint == "up" && this.speed.y < 0)
+                this.speed.y *= -1;
+            else if (collisionInfo.nearestPoint == "down" && this.speed.y > 0)
+                this.speed.y *= -1;
         }
     }
 
@@ -424,14 +420,14 @@ class PlayerBall extends ComponentObject {
         if (this.ignoreCollideWithPlayer)
             return;
 
-        let launchDirection = Vector2.subtract(cursorPosition, this.position);
+        let launchDirection = Vector2.copy(this.player.launchDirection);
         launchDirection.setLength(this.launchSpeed);
         this.setSpeed(launchDirection);
         this.ignoreCollideWithPlayer = true;
     }
 
-    // 공의 최소 y좌표 속도 보장
-    applyMinYSpeed() {
+    // 공의 최소 y좌표 속도 보장하려는 용도. 부자연스러워서 삭제함
+    /*applyMinYSpeed() {
         if (-this.minYSpeed < this.speed.y && this.speed.y < this.minYSpeed) {
             if (this.speed.y <= 0)
                 this.speed.y = -this.minYSpeed;
@@ -443,7 +439,7 @@ class PlayerBall extends ComponentObject {
             else
                 this.speed.x = Math.sqrt(this.launchSpeed * this.launchSpeed - this.minYSpeed * this.minYSpeed);
         }
-    }
+    }*/
 
     draw(ctx) {
         ctx.drawImage(img_playerBall, this.position.x - 30, this.position.y - 30);
@@ -451,57 +447,70 @@ class PlayerBall extends ComponentObject {
 
 }
 
+/**
+ * 플레이어의 공 발사각을 설정하고
+ * 발사각을 나타내는 화살표를 그리는 Component
+ */
 class PlayerLaunchAngleArrow extends Component {
     length;
+    radianLimit;
     player;
     ball;
     toFixPositionX;
     constructor(game, player, ball) {
         super(game);
         this.length = 100;
+        this.radianLimit = Math.PI / 6;
         this.player = player;
         this.ball = ball;
         this.toFixPositionX = 0;
     }
 
     update(delta) {
-        if (Math.abs(this.ball.position.x - this.player.position.x) < this.player.width / 2) {
-            this.toFixPositionX = this.ball.position.x - this.player.position.x;
-        }
+       let vectorToCursor = Vector2.subtract(cursorPosition, this.player.position);
+        let radian = vectorToCursor.toRadian();
+        if (-this.radianLimit < radian && radian < Math.PI / 2)
+            radian = -this.radianLimit;
+        if (Math.PI / 2 < radian || radian < this.radianLimit - Math.PI)
+            radian = this.radianLimit - Math.PI;
 
-
-        //let vectorToCursor = Vector2.subtract(cursorPosition, this.player.position);
-        //vectorToCursor.setLength(this.length);
-        //this.position = Vector2.plus(this.player.position, vectorToCursor);
-        this.position = cursorPosition;
-
+        let arrowDirection = Vector2.fromRadian(radian);
+        this.player.launchDirection = Vector2.copy(arrowDirection);
+        this.position = arrowDirection.setLength(this.length).plus(this.player.position);
     }
 
     draw(ctx) {
+        ctx.strokeStyle = "red";
         ctx.beginPath();
         ctx.strokeStyle = "red";
         ctx.moveTo(this.player.position.x + this.toFixPositionX, this.player.position.y);
         ctx.lineTo(this.position.x, this.position.y);
         ctx.stroke();
 
-        ctx.drawImage(img_target, this.position.x - 15, this.position.y - 15);
+        ctx.drawImage(img_target, cursorPosition.x -20, cursorPosition.y -20, 40, 40);
     }
 }
 
 // 박스 관련
 
 class Box extends ComponentObject {
+    relativePosition;
     width;
     height;
     owner;
     price;
-    constructor(game, position, width, height, owner = null, boost) {
+
+    constructor(game, relativePosition, width, height, owner = null, boost) {
         super(game);
-        this.position = Vector2.copy(position);
+        this.relativePosition = relativePosition;
+        this.position = Vector2.plus(owner.position, relativePosition);
         this.width = width;
         this.height = height;
         this.owner = owner;
-        this.shape = new ShapeAABB(new Vector2(), new Vector2());
+        // Box의 위치 정보는 ShapeAABB의 2, 3 번째 매개변수로 전달됨.
+        // 추가로 필요할 수 있는 건 속도 정보.
+        // 그런데 Box의 속도는 무의미하므로 대신 owner의 속도 정보에 접근할 수 있도록 함.
+        this.shape = new ShapeAABB(this.owner, new Vector2(), new Vector2());
         this.updateShape();
         this.drawOrder = 50;
 
@@ -513,18 +522,35 @@ class Box extends ComponentObject {
     }
     
     update(delta) {
-        this.speed = Vector2.copy(this.owner.speed);
+        this.checkWallCollision();
+        //this.speed = Vector2.copy(this.owner.speed);
+        this.position = Vector2.plus(this.owner.position, this.relativePosition);
         super.update(delta);
+    }
+
+    checkWallCollision() {
+        if (this.position.x <= this.width / 2 && this.owner.speed.x < 0) {  // 왼쪽 벽
+            this.processCollision(new CollisionInfo(true, "left", "wall"));
+        }
+        else if (GAME_WIDTH - this.position.x <= this.width / 2 && this.owner.speed.x > 0) {  // 오른쪽 벽
+            this.processCollision(new CollisionInfo(true, "right", "wall"));
+        }
+
+        if (this.position.y <= this.height && this.owner.speed.y < 0) {  // 위쪽 벽과 충돌 계산
+            this.processCollision(new CollisionInfo(true, "up", "wall"));
+        }
     }
 
     processCollision(collisionInfo) {
         this.owner.processCollision(collisionInfo);
 
-        //충돌된 상자 제거
-        this.destroyBox();
+        if (collisionInfo.component instanceof PlayerBall) {
+            //충돌된 상자 제거
+            this.destroyBox();
+        }
     }
 
-    destroyBox() {  
+    destroyBox() {
         let toAddCoin = 0;
         let explodeSize = 60;
         if (this instanceof CoreBox) { // 코어가 부서졌다면, 적 기체 제거 + 레벨증가조건 확인
@@ -537,7 +563,7 @@ class Box extends ComponentObject {
 
             // owner도 components에서 제거
             this.game.removeComponent(this.owner);
-            this.game.mobList.splice(this.game.mobList.indexOf(this.owner),1);
+            this.game.mobList.splice(this.game.mobList.indexOf(this.owner), 1);
             this.game.mobList.remove
             // 레벨 올릴지 검사
             this.game.checkLevelUp();
@@ -546,7 +572,7 @@ class Box extends ComponentObject {
             setTimeout(boxChange.bind(this), 1);
 
             function boxChange() {
-                this.owner.boxList.push(new NormalBox(this.game, this.position, this.owner));
+                this.owner.boxList.push(new NormalBox(this.game, this.relativePosition, this.owner));
                 this.game.removeComponent(this);
             }
 
@@ -628,7 +654,7 @@ class CannonBox extends Box {
     }
 
     doAttack() {
-        if (this.game.components.indexOf(this) < 0 ) {
+        if (this.game.components.indexOf(this) < 0) {
             clearInterval(this.interval);
             return;
         }
@@ -653,10 +679,10 @@ class MachinegunBox extends Box {
     }
 
     doAttack() {
-        if (this.game.components.indexOf(this) < 0 ) {
+        if (this.game.components.indexOf(this) < 0) {
             clearInterval(this.interval);
-        return;
-    }
+            return;
+        }
         let bullet1 = new Bullet(this.game, this);
         let bullet2 = new Bullet(this.game, this);
         let bullet3 = new Bullet(this.game, this);
@@ -679,7 +705,7 @@ class LazerBox extends Box {
     }
 
     doAttack() {
-        if (this.game.components.indexOf(this) < 0 ) {
+        if (this.game.components.indexOf(this) < 0) {
             clearInterval(this.interval);
             return;
         }
@@ -707,9 +733,16 @@ class Mob extends ComponentObject {
     }
 
     processCollision(collisionInfo) {
-        // 넉백
-        let newSpeed = Vector2.subtract(this.position, collisionInfo.nearestPoint).setLength(collisionInfo.component.speed.getLength());
-        this.speed = newSpeed;
+        if (collisionInfo.component instanceof PlayerBall) {
+            // 넉백
+            let newSpeed = Vector2.subtract(this.position, collisionInfo.nearestPoint).setLength(collisionInfo.component.speed.getLength());
+            this.speed = newSpeed;
+        } else if (collisionInfo.component == "wall") {
+            if (collisionInfo.nearestPoint == "left" || collisionInfo.nearestPoint == "right")
+                this.speed.x *= -1;
+            if (collisionInfo.nearestPoint == "up")
+                this.speed.y *= -1;
+        }
     }
 
     update(delta) {
@@ -718,7 +751,7 @@ class Mob extends ComponentObject {
         this.isArrived();
     }
 
-    isArrived() { 
+    isArrived() {
         // 맵 내부로 도착했는가
         if (this.position.y >= this.arrivalPosY) {
             this.leastSpeed = new Vector2(0, 5);
@@ -758,6 +791,11 @@ class Mob extends ComponentObject {
             if (this.speed.y > this.leastSpeed.y)
                 this.speed.y = this.leastSpeed.y;
         }
+
+        // 밑에 세줄은 충돌 테스트용
+        // if (this.speed.y <= this.leastSpeed.y && this.position.y >= this.arrivalPosY) {
+        //     this.resistance = 100;
+        // }
     }
 }
 
@@ -766,8 +804,9 @@ class Mob_pawn extends Mob {
     constructor(game, position) {
         super(game, position);
 
-        this.boxList.push(new CoreBox(game, this.position, this, true));
-        this.boxList.push(new CannonBox(game, new Vector2(this.position.x, this.position.y + 30), this));
+
+        this.boxList.push(new CoreBox(game, new Vector2(), this, true));
+        this.boxList.push(new CannonBox(game, new Vector2(0, 30), this));
 
         this.resistance = 1000;
 
@@ -778,90 +817,90 @@ class Mob_pawn extends Mob {
     }
 }
 
-class Mob_knight extends Mob{
-    
+class Mob_knight extends Mob {
+
     constructor(game, position) {
         super(game, position);
-         
-        this.boxList.push (new CoreBox(game, this.position, this, true));
-        this.boxList.push (new BarrierBox(game, new Vector2(this.position.x + 0, this.position.y + 30), this));
-        this.boxList.push (new CannonBox(game, new Vector2(this.position.x - 30, this.position.y + 0), this));
-        this.boxList.push (new CannonBox(game, new Vector2(this.position.x + 30, this.position.y + 0), this));
+
+        this.boxList.push(new CoreBox(game, new Vector2(), this, true));
+        this.boxList.push(new BarrierBox(game, new Vector2(0, 30), this));
+        this.boxList.push(new CannonBox(game, new Vector2(-30, 0), this));
+        this.boxList.push(new CannonBox(game, new Vector2(30, 0), this));
 
         this.resistance = 1500;
 
     }
 
     draw() {
-        this.game.ctx.drawImage(img_knightBody, this.position.x -105  , this.position.y - 75);
+        this.game.ctx.drawImage(img_knightBody, this.position.x - 105, this.position.y - 75);
     }
 }
 
-class Mob_bishop extends Mob{
-    
+class Mob_bishop extends Mob {
+
     constructor(game, position) {
         super(game, position);
-         
-        this.boxList.push (new CoreBox(game, this.position, this));
-        this.boxList.push (new BarrierBox(game, new Vector2(this.position.x + 0, this.position.y + 30), this));
-        this.boxList.push (new NormalBox(game, new Vector2(this.position.x + 0, this.position.y + 60), this));
-        this.boxList.push (new NormalBox(game, new Vector2(this.position.x + 30, this.position.y + 0), this));
-        this.boxList.push (new NormalBox(game, new Vector2(this.position.x + 60, this.position.y + 0), this));
-        this.boxList.push (new NormalBox(game, new Vector2(this.position.x - 30, this.position.y + 0), this));
-        this.boxList.push (new NormalBox(game, new Vector2(this.position.x - 60, this.position.y + 0), this));
-        this.boxList.push(new NormalBox(game, new Vector2(this.position.x + 0, this.position.y - 30), this, true));
-        this.boxList.push (new MachinegunBox(game, new Vector2(this.position.x + 60, this.position.y + 30), this));
-        this.boxList.push(new MachinegunBox(game, new Vector2(this.position.x + 60, this.position.y - 30), this, true));
-        this.boxList.push (new MachinegunBox(game, new Vector2(this.position.x - 60, this.position.y + 30), this));
-        this.boxList.push(new MachinegunBox(game, new Vector2(this.position.x - 60, this.position.y - 30), this, true));
-    
-        this.resistance = 1800;
-    }
 
-    draw() {
-        this.game.ctx.drawImage(img_bishopBody, this.position.x -105  , this.position.y - 75);
-    }
-}
-
-class Mob_rook extends Mob{
-    
-    constructor(game, position) {
-        super(game, position);
-         
-        this.boxList.push (new CoreBox(game, this.position, this));
-        this.boxList.push (new BarrierBox(game, new Vector2(this.position.x + 0, this.position.y + 30), this));
-        this.boxList.push (new NormalBox(game, new Vector2(this.position.x + 0, this.position.y + 60), this));
-        this.boxList.push(new NormalBox(game, new Vector2(this.position.x + 30, this.position.y - 30), this, true));
-        this.boxList.push (new NormalBox(game, new Vector2(this.position.x + 30, this.position.y + 0), this));
-        this.boxList.push (new NormalBox(game, new Vector2(this.position.x + 30, this.position.y + 30), this));
-        this.boxList.push (new NormalBox(game, new Vector2(this.position.x + 30, this.position.y + 60), this));
-        this.boxList.push(new NormalBox(game, new Vector2(this.position.x - 30, this.position.y - 30), this, true));
-        this.boxList.push (new NormalBox(game, new Vector2(this.position.x - 30, this.position.y + 0), this));
-        this.boxList.push (new NormalBox(game, new Vector2(this.position.x - 30, this.position.y + 30), this));
-        this.boxList.push (new NormalBox(game, new Vector2(this.position.x - 30, this.position.y + 60), this));
-        this.boxList.push(new LazerBox(game, new Vector2(this.position.x + 0, this.position.y - 30), this, true));
+        this.boxList.push(new CoreBox(game, new Vector2(), this));
+        this.boxList.push(new BarrierBox(game, new Vector2(0, 30), this));
+        this.boxList.push(new NormalBox(game, new Vector2(0, 60), this));
+        this.boxList.push(new NormalBox(game, new Vector2(30, 0), this));
+        this.boxList.push(new NormalBox(game, new Vector2(60, 0), this));
+        this.boxList.push(new NormalBox(game, new Vector2(-30, 0), this));
+        this.boxList.push(new NormalBox(game, new Vector2(-60, 0), this));
+        this.boxList.push(new NormalBox(game, new Vector2(0, -30), this, true));
+        this.boxList.push(new MachinegunBox(game, new Vector2(60, 30), this));
+        this.boxList.push(new MachinegunBox(game, new Vector2(60, -30), this, true));
+        this.boxList.push(new MachinegunBox(game, new Vector2(-60, 30), this));
+        this.boxList.push(new MachinegunBox(game, new Vector2(-60, -30), this, true));
 
         this.resistance = 1800;
     }
 
     draw() {
-        this.game.ctx.drawImage(img_rookBody, this.position.x -105  , this.position.y - 75);
+        this.game.ctx.drawImage(img_bishopBody, this.position.x - 105, this.position.y - 75);
     }
 }
 
-class Mob_qween extends Mob{
-    
+class Mob_rook extends Mob {
+
+    constructor(game, position) {
+        super(game, position);
+
+        this.boxList.push(new CoreBox(game, new Vector2(), this));
+        this.boxList.push(new BarrierBox(game, new Vector2(0, 30), this));
+        this.boxList.push(new NormalBox(game, new Vector2(0, 60), this));
+        this.boxList.push(new NormalBox(game, new Vector2(30, -30), this, true));
+        this.boxList.push(new NormalBox(game, new Vector2(30, 0), this));
+        this.boxList.push(new NormalBox(game, new Vector2(30, 30), this));
+        this.boxList.push(new NormalBox(game, new Vector2(30, 60), this));
+        this.boxList.push(new NormalBox(game, new Vector2(-30, -30), this, true));
+        this.boxList.push(new NormalBox(game, new Vector2(-30, 0), this));
+        this.boxList.push(new NormalBox(game, new Vector2(-30, 30), this));
+        this.boxList.push(new NormalBox(game, new Vector2(-30, 60), this));
+        this.boxList.push(new LazerBox(game, new Vector2(0, -30), this, true));
+
+        this.resistance = 1800;
+    }
+
+    draw() {
+        this.game.ctx.drawImage(img_rookBody, this.position.x - 105, this.position.y - 75);
+    }
+}
+
+class Mob_qween extends Mob {
+
     constructor(game, position) {
         super(game, position);
 
         for (let i = -1; i < 2; i++) {
             for (let j = -2; j < 3; j++) {
                 if (i == 0 && j == 0) {
-                    this.boxList.push (new CoreBox(game, this.position, this));
+                    this.boxList.push(new CoreBox(game, new Vector2(), this));
                     continue;
                 }
 
-                else this.boxList.push (new MachinegunBox(game, new Vector2(this.position.x + i*30, this.position.y + j*30), this));
+                else this.boxList.push(new MachinegunBox(game, new Vector2(i * 30, j * 30), this));
             }
         }
 
@@ -873,19 +912,19 @@ class Mob_qween extends Mob{
     }
 }
 
-class Mob_king extends Mob{
-    
+class Mob_king extends Mob {
+
     constructor(game, position) {
         super(game, position);
 
         for (let i = -2; i < 3; i++) {
             for (let j = -2; j < 4; j++) {
                 if (i == 0 && j == 0) {
-                    this.boxList.push (new CoreBox(game, this.position, this));
+                    this.boxList.push(new CoreBox(game, new Vector2(), this));
                     continue;
                 }
 
-                else this.boxList.push (new BarrierBox(game, new Vector2(this.position.x + i*30, this.position.y + j*30), this));
+                else this.boxList.push(new BarrierBox(game, new Vector2(i * 30, j * 30), this));
             }
         }
 
@@ -916,12 +955,12 @@ class Attacks extends ComponentObject {
         this.damage = damage;
         this.position = Vector2.copy(this.box.position);
         this.err = err;
-        this.angleError = Math.random() * this.err -0.5 * err;
+        this.angleError = Math.random() * this.err - 0.5 * err;
 
         this.newSpeed = new Vector2((this.player.position.x - this.box.position.x), (this.player.position.y - this.box.position.y));
-        this.speed = new Vector2(this.spdScalar * this.newSpeed.x/this.newSpeed.y + this.angleError, this.spdScalar);
-        
-        this.shape = new ShapeCircle(this.position, this.radius);
+        this.speed = new Vector2(this.spdScalar * this.newSpeed.x / this.newSpeed.y + this.angleError, this.spdScalar);
+
+        this.shape = new ShapeCircle(this, this.position, this.radius);
 
         this.drawOrder = 30;
     }
@@ -931,9 +970,9 @@ class Attacks extends ComponentObject {
         if (this.position.y >= 800) {
             this.game.removeComponent(this);
         }
-  
+
         ComponentObject.checkCollision(this, this.game.player);
-  
+
         super.update(delta);
     }
 
@@ -958,7 +997,7 @@ class Cannon extends Attacks {
     }
 
     draw(ctx) {
-        this.game.ctx.drawImage(img_cannon, this.position.x -30  , this.position.y - 30);
+        this.game.ctx.drawImage(img_cannon, this.position.x - 30, this.position.y - 30);
     }
 }
 
@@ -971,7 +1010,7 @@ class Bullet extends Attacks {
         super(game, box, radius, spdScalar, damage, err);
     }
     draw(ctx) {
-        this.game.ctx.drawImage(img_bullet, this.position.x -30  , this.position.y - 30);
+        this.game.ctx.drawImage(img_bullet, this.position.x - 30, this.position.y - 30);
     }
 }
 
