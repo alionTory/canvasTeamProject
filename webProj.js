@@ -181,11 +181,15 @@ class Game {
         //몹 초기화
         this.mobList = [];
 
-        //총알들 초기화
+        //적공격들 초기화
+        let removal = []; // 조건문의 배열요소 삭제로 인한 오류 예방함.
         for (let comp of this.components) {
             if (comp instanceof Attacks) {
-                this.removeComponent(comp);
+                removal.push(comp);
             }
+        }
+        for (let comp of removal) {
+            this.removeComponent(comp);
         }
 
         switch (level) {
@@ -456,18 +460,25 @@ class PlayerLaunchAngleArrow extends Component {
     radianLimit;
     player;
     ball;
-    toFixPositionX;
+    XposFixer;
     constructor(game, player, ball) {
         super(game);
         this.length = 100;
         this.radianLimit = Math.PI / 6;
         this.player = player;
         this.ball = ball;
-        this.toFixPositionX = 0;
+        this.XposFixer = 0;
     }
 
     update(delta) {
-       let vectorToCursor = Vector2.subtract(cursorPosition, this.player.position);
+        let vectorToCursor = Vector2.subtract(cursorPosition, this.player.position);
+        
+        if (Math.abs(this.ball.position.x - this.player.position.x) < this.player.width / 2) {
+            this.XposFixer = this.ball.position.x - this.player.position.x;
+            vectorToCursor = Vector2.subtract(vectorToCursor, new Vector2(this.XposFixer, 0));
+        }
+
+
         let radian = vectorToCursor.toRadian();
         if (-this.radianLimit < radian && radian < Math.PI / 2)
             radian = -this.radianLimit;
@@ -475,16 +486,15 @@ class PlayerLaunchAngleArrow extends Component {
             radian = this.radianLimit - Math.PI;
 
         let arrowDirection = Vector2.fromRadian(radian);
-        this.player.launchDirection = Vector2.copy(arrowDirection);
+        this.player.launchDirection = Vector2.subtract(Vector2.copy(arrowDirection), new Vector2(this.ballDirectionFixer, 0));
         this.position = arrowDirection.setLength(this.length).plus(this.player.position);
     }
 
     draw(ctx) {
-        ctx.strokeStyle = "red";
         ctx.beginPath();
         ctx.strokeStyle = "red";
-        ctx.moveTo(this.player.position.x + this.toFixPositionX, this.player.position.y);
-        ctx.lineTo(this.position.x, this.position.y);
+        ctx.moveTo(this.player.position.x + this.XposFixer, this.player.position.y);
+        ctx.lineTo(cursorPosition.x, cursorPosition.y);
         ctx.stroke();
 
         ctx.drawImage(img_target, cursorPosition.x -20, cursorPosition.y -20, 40, 40);
@@ -759,7 +769,6 @@ class Mob extends ComponentObject {
 
         // 맵 끝으로 가버렸는가
         if (this.position.y > GAME_HEIGHT - 100) {
-            console.log(this.leastSpeed);
             this.leastSpeed = new Vector2(0, 100);
         }
 
