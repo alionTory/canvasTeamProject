@@ -49,11 +49,11 @@ $(function () {
     const game = new Game(gameCanvas[0].getContext("2d"));
 
     $(gameCanvas).hover(
-        function() {
+        function () {
             gameCanvas.addClass("hide_cursor");
-    }, function() {
-        gameCanvas.removeClass("hide_cursor");
-    });
+        }, function () {
+            gameCanvas.removeClass("hide_cursor");
+        });
 });
 
 $(document).on("keydown", function (event) {
@@ -365,7 +365,7 @@ class Player extends ComponentObject {
             if (gameInput.left) { ctx.drawImage(img_fireL2, this.position.x - 10.5 + 60, this.position.y - 7.5); }
             if (gameInput.right) { ctx.drawImage(img_fireR2, this.position.x - 10.5 - 60, this.position.y - 7.5); }
         }
-        
+
     }
 }
 
@@ -488,12 +488,7 @@ class PlayerLaunchAngleArrow extends Component {
 
     update(delta) {
         let vectorToCursor = Vector2.subtract(cursorPosition, this.player.position);
-        
-        if (Math.abs(this.ball.position.x - this.player.position.x) < this.player.width / 2) {
-            this.XposFixer = this.ball.position.x - this.player.position.x;
-            vectorToCursor = Vector2.subtract(vectorToCursor, new Vector2(this.XposFixer, 0));
-        }
-
+        let length = vectorToCursor.getLength();
 
         let radian = vectorToCursor.toRadian();
         if (-this.radianLimit < radian && radian < Math.PI / 2)
@@ -502,18 +497,30 @@ class PlayerLaunchAngleArrow extends Component {
             radian = this.radianLimit - Math.PI;
 
         let arrowDirection = Vector2.fromRadian(radian);
-        this.player.launchDirection = Vector2.subtract(Vector2.copy(arrowDirection), new Vector2(this.ballDirectionFixer, 0));
-        this.position = arrowDirection.setLength(this.length).plus(this.player.position);
+        this.player.launchDirection = Vector2.copy(arrowDirection);
+        vectorToCursor = arrowDirection.setLength(length);
+        this.moveVectorToCursorInsideCanvas(vectorToCursor);
+        this.position = vectorToCursor.plus(this.player.position);
+    }
+
+    moveVectorToCursorInsideCanvas(vectorToCursor) {
+        if (cursorPosition.x < 0)
+            vectorToCursor.multiply(this.player.position.x / (this.player.position.x - cursorPosition.x));
+        if (GAME_WIDTH < cursorPosition.x)
+            vectorToCursor.multiply((this.player.position.x - GAME_WIDTH) / (this.player.position.x - cursorPosition.x));
+        if(cursorPosition.y < 0)
+            vectorToCursor.multiply(this.player.position.y / (this.player.position.y - cursorPosition.y));
     }
 
     draw(ctx) {
         ctx.beginPath();
         ctx.strokeStyle = "red";
-        ctx.moveTo(this.player.position.x + this.XposFixer, this.player.position.y);
-        ctx.lineTo(cursorPosition.x, cursorPosition.y);
+        ctx.setLineDash([5, 5]);
+        ctx.moveTo(this.player.position.x + this.toFixPositionX, this.player.position.y);
+        ctx.lineTo(this.position.x, this.position.y);
         ctx.stroke();
 
-        ctx.drawImage(img_target, cursorPosition.x -20, cursorPosition.y -20, 40, 40);
+        ctx.drawImage(img_target, this.position.x - 20, this.position.y - 20, 40, 40);
     }
 }
 
@@ -547,7 +554,7 @@ class Box extends ComponentObject {
 
         game.collideablesWithBall.push(this);
     }
-    
+
     update(delta) {
         this.checkWallCollision();
         //this.speed = Vector2.copy(this.owner.speed);
@@ -1054,7 +1061,7 @@ class Lazer extends Attacks {
         super(game, box, radius, spdScalar, damage, err);
     }
     draw(ctx) {
-        this.game.ctx.drawImage(img_lazer, this.position.x - this.radius  , this.position.y - this.radius, this.radius*2, this.radius*2);
+        this.game.ctx.drawImage(img_lazer, this.position.x - this.radius, this.position.y - this.radius, this.radius * 2, this.radius * 2);
     }
 }
 
@@ -1067,7 +1074,7 @@ class Anime extends Component {
         super(game);
     }
 
-    draw(ctx) {}
+    draw(ctx) { }
 
 }
 
@@ -1081,7 +1088,7 @@ class Anime_background extends Anime {
 
     draw(ctx) {
         ctx.drawImage(this.img, 0, this.spd * this.game.previousTicks % GAME_WIDTH - 700);
-    }        
+    }
 }
 
 class Anime_explode extends Anime { // 미완성
@@ -1101,7 +1108,7 @@ class Anime_explode extends Anime { // 미완성
 
     update(delta) {
         if (this.opacity > 0.5) {
-            this.size *= 1+this.spd;
+            this.size *= 1 + this.spd;
             this.opacity -= this.spd;
         } else {
             this.game.removeComponent(this);
@@ -1120,7 +1127,7 @@ class Anime_explode extends Anime { // 미완성
         ctx.globalAlpha = this.opacity;
         ctx.drawImage(this.img, this.position.x - this.size / 2, this.position.y - this.size / 2, this.size, this.size);
         ctx.globalAlpha = 1;
-    }        
+    }
 }
 
 class Anime_boost extends Anime {
@@ -1142,7 +1149,7 @@ class Anime_boost extends Anime {
 
     draw(ctx) {
         ctx.globalAlpha = this.opacity;
-        if (this.game.previousTicks % this.spd > this.spd/2) {
+        if (this.game.previousTicks % this.spd > this.spd / 2) {
             ctx.drawImage(img_fireD, this.box.position.x - 10.5, this.box.position.y - 50.5);
         }
         else {
