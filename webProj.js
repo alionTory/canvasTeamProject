@@ -1,3 +1,5 @@
+// Game.processInput이 끝날 때 무조건 click이 false가 되므로 주의.
+// 클릭 이벤트는 processInput이 끝나기 전에 처리되야 함.
 const gameInput = { left: false, right: false, click: false };
 let cursorPosition = null;
 let fixedCursorPosition = null;
@@ -44,8 +46,10 @@ $(function () {
         cursorPosition.set(event.pageX - gameCanvas.offset().left, event.pageY - gameCanvas.offset().top);
     });
 
-    // 디버그 용
-    $(document).on("click", function (event) { console.log(cursorPosition); });
+    $(document).on("mousedown", function (event) {
+        gameInput.click = true;
+        console.log(cursorPosition);    // 디버그 용
+    });
 
     const game = new Game(gameCanvas[0].getContext("2d"));
 
@@ -121,6 +125,7 @@ class Game {
 
     processInput() {
         this.player.processInput();
+        gameInput.click = false;
     }
     updateGame(timestamp) {
         this.delta = (timestamp - this.previousTicks) / 1000;
@@ -318,6 +323,11 @@ class Player extends ComponentObject {
     launchDirection;
     radianLimit
     heart
+    parryingCoolTime;  // 패링 쿨타임은 parryingCoolTime과 leftTimeForNextParrying으로 관리
+    leftTimeForNextParrying;
+    isParrying;
+    parryingToleranceTime;  // 충돌 이벤트 전후로 parringToleranceTime / 2 초 동안은 패링으로 쳐줌
+    leftParryingPersistTime;
     constructor(game) {
         super(game);
         this.width = 81;
@@ -326,26 +336,57 @@ class Player extends ComponentObject {
         this.launchDirection = new Vector2(0, -1);
         this.radianLimit = Math.PI / 6;
         this.heart = 1000;
+
+        // 공 패링 관련
+        this.parryingCoolTime = 0.5;
+        this.leftTimeForNextParrying = 0;
+        this.isParrying = false;
+        this.parryingToleranceTime = 0.2;
+        this.leftParryingPersistTime = 0;
+
         this.position.set(GAME_WIDTH / 2, GAME_HEIGHT - this.height / 2 - 10);
         this.shape = new ShapeAABB(this, new Vector2(), new Vector2());
         game.collideablesWithBall.push(this);
+    }
+
+    processInput() {
+        if (gameInput.left && 0 < this.position.x) {
+            this.speed.set(-this.maxSpeed, 0);
+        } else if (gameInput.right && this.position.x < GAME_WIDTH) {
+            this.speed.set(this.maxSpeed, 0);
+        } else {
+            this.speed.set(0, 0);
+        }
+        this.fixCursorPosition();
+
+        if (gameInput.click && this.leftTimeForNextParrying <= 0) {
+            this.isParrying = true;
+            this.leftTimeForNextParrying = this.parryingCoolTime;
+            // 나누기 2하는 이유는, parringToleranceTime을 충돌 이벤트 전후로 나눠서 적용하기 위함.
+            this.leftParryingPersistTime = this.parryingToleranceTime / 2;
+            // 충돌 이벤트 전에 발생한 패링 이벤트 허용은 Player에서, 이후에 발생한 패링은 PlayerBall에서 처리.
+        }
+    }
+
+    update(delta) {
+        this.processParrying(delta);
+        super.update(delta);
+    }
+
+    processParrying(delta) {
+        if (this.leftTimeForNextParrying > 0)
+            this.leftTimeForNextParrying -= delta;
+
+        if (this.leftParryingPersistTime > 0)
+            this.leftParryingPersistTime -= delta;
+        else if (this.isParrying)
+            this.isParrying = false;
     }
 
     updateShape() {
         let widthHeightHalf = new Vector2(this.width / 2, this.height / 2);
         this.shape.min = Vector2.subtract(this.position, widthHeightHalf);
         this.shape.max = Vector2.plus(this.position, widthHeightHalf);
-    }
-
-    processInput() {
-        if (gameInput.left && 0 < this.position.x) {
-            this.speed.set(-this.maxSpeed, 0);
-        } else if (gameInput.right&& this.position.x < GAME_WIDTH) {
-            this.speed.set(this.maxSpeed, 0);
-        } else {
-            this.speed.set(0, 0);
-        }
-        this.fixCursorPosition();
     }
 
     fixCursorPosition() {
@@ -377,6 +418,7 @@ class Player extends ComponentObject {
     }
 
     draw(ctx) {
+        ctx.save();
         ctx.drawImage(img_player, this.position.x - 46.5, this.position.y - 10.5);
         if (this.game.previousTicks % 100 > 50) {
             if (gameInput.left) { ctx.drawImage(img_fireL, this.position.x - 10.5 + 60, this.position.y - 7.5); }
@@ -387,17 +429,30 @@ class Player extends ComponentObject {
             if (gameInput.right) { ctx.drawImage(img_fireR2, this.position.x - 10.5 - 60, this.position.y - 7.5); }
         }
 
+        if (this.isParrying) {
+            ctx.beginPath();
+            ctx.moveTo(this.position.x - this.width / 2, this.position.y - this.height / 2 - 10);
+            ctx.lineTo(this.position.x + this.width / 2, this.position.y - this.height / 2 - 10);
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = "blue";
+            ctx.stroke();
+        }
+
+        ctx.restore();
     }
 }
 
 class PlayerBall extends ComponentObject {
     player;
     radius;
-    state;  // "generating", "normal"
+    state;  // "generating", "normal", "reinforcing", "reinforced"
     generatingDelay;
     leftTimeForGenerating;
     opacity;
     launchSpeed;
+    launchSpeedList;  // 공의 상태에 따라 정해질 발사 속도 리스트
+    parryingCount;
+    parryingCheckTimeLeft;  // 플레이어가 충돌 이벤트 발생 이후에 클릭한 경우 패링을 검사하기 위한 필드.
     ignoreCollideWithPlayer;  // 플레이어와 충돌한 뒤에 일정 시간동안 플레이어와 충돌하지 않도록 함.
 
     constructor(game, player) {
@@ -405,7 +460,8 @@ class PlayerBall extends ComponentObject {
         this.player = player;
         this.radius = 10;
         this.generatingDelay = 2;
-        this.launchSpeed = 500;
+        this.launchSpeedList = [300, 500, 700];
+        this.launchSpeed = this.launchSpeedList[0];
         this.init();
     }
 
@@ -417,6 +473,8 @@ class PlayerBall extends ComponentObject {
         this.state = "generating";
         this.leftTimeForGenerating = this.generatingDelay;
         this.opacity = 0;
+        this.parryingCount = 0;
+        this.parryingCheckTimeLeft = 0;
     }
 
     update(delta) {
@@ -428,10 +486,11 @@ class PlayerBall extends ComponentObject {
             this.opacity = 1 - this.leftTimeForGenerating / this.generatingDelay;
             this.position.set(this.player.position.x, this.player.position.y - this.radius - this.player.height / 2);
             if (this.leftTimeForGenerating == 0) {
-                this.state = "normal";
+                this.setState("normal");
             }
 
-        } else if (this.state == "normal") {
+        } else {
+            this.checkParryingAfterCollision(delta);
             this.checkWallCollision();
             for (let collideable of this.game.collideablesWithBall) {
                 if (this.game.components.indexOf(collideable) >= 0)
@@ -484,10 +543,71 @@ class PlayerBall extends ComponentObject {
         if (this.ignoreCollideWithPlayer)
             return;
 
+        this.updateParrying();
         let launchDirection = Vector2.subtract(fixedCursorPosition, this.position);
         launchDirection.setLength(this.launchSpeed);
         this.setSpeed(launchDirection);
         this.ignoreCollideWithPlayer = true;
+    }
+
+    updateParrying() {
+        if (this.game.player.isParrying) {
+            this.parryingSuccess();
+        } else {
+            // 충돌 이후 발생한 클릭을 검출하기 위함.
+            this.parryingCheckTimeLeft = this.game.player.parryingToleranceTime / 2;
+        }
+    }
+
+    parryingSuccess() {
+        this.parryingCount++;
+        if (this.parryingCount == 1)
+            this.setState("reinforcing");
+        else if (this.parryingCount == 2)
+            this.setState("reinforced");
+    }
+
+    parryingFailed() {
+        if (this.parryingCount >= 2)
+            this.parryingCount = 1;
+        else
+            this.parryingCount = 0;
+
+        if (this.parryingCount == 1)
+            this.setState("reinforcing");
+        else if (this.parryingCount == 0)
+            this.setState("normal");
+    }
+
+    checkParryingAfterCollision(delta) {
+        if (this.parryingCheckTimeLeft > 0) {
+            this.parryingCheckTimeLeft -= delta;
+
+            if (this.game.player.isParrying) {
+                this.parryingSuccess();
+                this.speed.setLength(this.launchSpeed);
+                this.parryingCheckTimeLeft = 0;
+            } else if (this.parryingCheckTimeLeft <= 0) {
+                this.parryingFailed();
+                this.speed.setLength(this.launchSpeed);
+            }
+        }
+    }
+
+    // generating으로 바꿀 때는 사용되지 않음. generating으로 바꾸려면 init() 사용.
+    setState(state) {
+        this.state = state;
+        switch (state) {
+            case "normal":
+                this.launchSpeed = this.launchSpeedList[0];
+                break;
+            case "reinforcing":
+                this.launchSpeed = this.launchSpeedList[1];
+                break;
+            case "reinforced":
+                this.launchSpeed = this.launchSpeedList[2];
+                break;
+        }
     }
 
     checkBallMissed() {
@@ -514,9 +634,26 @@ class PlayerBall extends ComponentObject {
     }*/
 
     draw(ctx) {
+        ctx.save();
+
         ctx.globalAlpha = this.opacity;
         ctx.drawImage(img_playerBall, this.position.x - 30, this.position.y - 30);
         ctx.globalAlpha = 1;
+
+        if (this.state == "reinforcing") {
+            ctx.beginPath();
+            ctx.lineWidth = 3;
+            ctx.arc(this.position.x, this.position.y, this.radius + 5, 0, Math.PI * 2);
+            ctx.strokeStyle = "yellow";
+            ctx.stroke();
+        } else if (this.state == "reinforced") {
+            ctx.beginPath();
+            ctx.lineWidth = 3;
+            ctx.arc(this.position.x, this.position.y, this.radius + 5, 0, Math.PI * 2);
+            ctx.strokeStyle = "red";
+            ctx.stroke();
+        }
+        ctx.restore();
     }
 
 }
@@ -542,6 +679,8 @@ class PlayerLaunchAngleArrow extends Component {
 
 
     draw(ctx) {
+        ctx.save();
+
         ctx.beginPath();
         ctx.strokeStyle = "red";
         ctx.setLineDash([5, 5]);
@@ -550,6 +689,7 @@ class PlayerLaunchAngleArrow extends Component {
         ctx.stroke();
 
         ctx.drawImage(img_target, this.position.x - 20, this.position.y - 20, 40, 40);
+        ctx.restore();
     }
 }
 
