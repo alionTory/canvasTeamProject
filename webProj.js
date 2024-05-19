@@ -235,6 +235,20 @@ class Game {
         }
     }
 
+    ballMissed() {
+        //공 위치 초기화
+        this.playerBall.speed = new Vector2(0, 40);
+        this.playerBall.position = new Vector2(GAME_WIDTH / 2, GAME_HEIGHT - 150);
+        this.playerHurt(330);
+    }
+
+    playerHurt(dmg) {
+        console.log("heart : "+( this.heart -= dmg) + "(-" + dmg + ")");
+    }
+    addCoin(toAddCoin) {
+        console.log("coin : "+( this.coin += toAddCoin) + "(+" + toAddCoin + ")");
+    }
+
     gameEnd() {
 
     }
@@ -399,9 +413,11 @@ class PlayerBall extends ComponentObject {
         else if (GAME_WIDTH - this.position.x <= this.radius) {  // 오른쪽 벽
             this.processCollision(new CollisionInfo(true, "right", "wall"));
         }
-
         if (this.position.y <= this.radius) {  // 위쪽 벽과 충돌
             this.processCollision(new CollisionInfo(true, "up", "wall"));
+        }
+        if (this.position.y >= this.radius + GAME_HEIGHT) {  // 공 놓침
+            this.game.ballMissed();
         }
     }
 
@@ -509,6 +525,7 @@ class Box extends ComponentObject {
     height;
     owner;
     price;
+    interval;
 
     constructor(game, relativePosition, width, height, owner = null, boost) {
         super(game);
@@ -560,13 +577,17 @@ class Box extends ComponentObject {
         }
     }
 
+    doAttack(){};
+
     destroyBox() {
         let toAddCoin = 0;
         let explodeSize = 60;
+
         if (this instanceof CoreBox) { // 코어가 부서졌다면, 적 기체 제거 + 레벨증가조건 확인
             for (let b of this.owner.boxList) {
                 this.game.removeComponent(b);
                 toAddCoin += b.price + 20; // 코어 부술 시 추가 코인
+                clearInterval(b.interval); // 공격 멈춤
             }
 
             explodeSize = 120;
@@ -590,11 +611,11 @@ class Box extends ComponentObject {
         else {
             this.game.removeComponent(this);
             toAddCoin += this.price;
+            clearInterval(this.interval); // 공격 멈춤
         }
 
-        //코인 얼마나 벌었는지
-        this.game.coin += toAddCoin;
-        console.log(this.game.coin + "( + " + toAddCoin + ")");
+        //코인 얻음
+        this.game.addCoin(toAddCoin);
 
         //애니메이션
         new Anime_explode(this.game, explodeSize, this);
@@ -656,7 +677,6 @@ class CannonBox extends Box {
         super(game, position, 30, 30, owner, boost);
         this.price = 35;
         this.coolTime = 2000;
-        this.interval = setInterval(this.doAttack.bind(this), this.coolTime);
     }
 
     draw(ctx) {
@@ -664,12 +684,7 @@ class CannonBox extends Box {
     }
 
     doAttack() {
-        if (this.game.components.indexOf(this) < 0) {
-            clearInterval(this.interval);
-            return;
-        }
-
-        let cannon = new Cannon(this.game, this);
+    new Cannon(this.game, this);
     }
 }
 
@@ -681,7 +696,6 @@ class MachinegunBox extends Box {
         super(game, position, 30, 30, owner, boost);
         this.price = 70;
         this.coolTime = 3000;
-        this.interval = setInterval(this.doAttack.bind(this), this.coolTime);
     }
 
     draw(ctx) {
@@ -689,13 +703,9 @@ class MachinegunBox extends Box {
     }
 
     doAttack() {
-        if (this.game.components.indexOf(this) < 0) {
-            clearInterval(this.interval);
-            return;
-        }
-        let bullet1 = new Bullet(this.game, this);
-        let bullet2 = new Bullet(this.game, this);
-        let bullet3 = new Bullet(this.game, this);
+        new Bullet(this.game, this);
+        new Bullet(this.game, this);
+        new Bullet(this.game, this);
     }
 }
 
@@ -733,13 +743,19 @@ class Mob extends ComponentObject {
 
     arrivalPosY; // 몹이 생성되고 지정된 위치에 도착한다면 느려짐.
 
+    prepareAtk;
+    atkGap = 333;
+
     constructor(game, position) {
         super(game);
         this.leastSpeed = new Vector2(0, 300); //몹의 이속
         this.position = new Vector2(position.x, position.y - 700);
         this.arrivalPosY = position.y;
 
+        this.prepareAtk = 1000;
+
         this.drawOrder = 40;
+        setTimeout(this.attack.bind(this), this.prepareAtk );
     }
 
     processCollision(collisionInfo) {
@@ -759,6 +775,14 @@ class Mob extends ComponentObject {
         this.updateSpeed(delta);
         super.update(delta);
         this.isArrived();
+    }
+
+    attack() {
+        let tmp = 0;
+        for (let box of this.boxList) {
+            setTimeout(function(){box.interval = setInterval(box.doAttack.bind(box), box.coolTime)}, tmp);
+            tmp += this.atkGap;
+        }
     }
 
     isArrived() {
@@ -818,7 +842,6 @@ class Mob_pawn extends Mob {
         this.boxList.push(new CannonBox(game, new Vector2(0, 30), this));
 
         this.resistance = 1000;
-
     }
 
     draw() {
@@ -991,8 +1014,7 @@ class Attacks extends ComponentObject {
 
     processCollision(collisionInfo) {////////////////////////////////////////
         this.game.removeComponent(this);
-        this.game.heart -= this.damage;
-        console.log(this.game.heart);
+        this.game.playerHurt(this.damage);
     }
 }
 
