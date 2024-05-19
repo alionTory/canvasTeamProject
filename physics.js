@@ -1,6 +1,7 @@
 class Vector2 {
     x;
     y;
+    static initialLine = new Vector2(1, 0);
     constructor(x = 0, y = 0) {
         this.x = x;
         this.y = y;
@@ -76,6 +77,13 @@ class Vector2 {
     //     return new Vector2(Math.cos(radian), Math.sin(radian));
     // }
 
+    toRadian() {
+        return Math.atan2(this.y, this.x);
+    }
+
+    static fromRadian(radian) {
+        return new Vector2(Math.cos(radian), Math.sin(radian));
+    }
 }
 
 // 충돌 판정을 위한 클래스. ComponentObject의 필드로 저장된다.

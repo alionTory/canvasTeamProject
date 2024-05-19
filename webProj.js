@@ -286,11 +286,13 @@ class Player extends ComponentObject {
     width;
     height;
     maxSpeed;
+    launchDirection;
     constructor(game) {
         super(game);
         this.width = 80;
         this.height = 10;
         this.maxSpeed = 500;
+        this.launchDirection = new Vector2(0, -1);
         this.position.set(GAME_WIDTH / 2, GAME_HEIGHT - this.height / 2 - 10);
         this.shape = new ShapeAABB(this, new Vector2(), new Vector2());
         game.collideablesWithBall.push(this);
@@ -387,7 +389,7 @@ class PlayerBall extends ComponentObject {
         if (this.ignoreCollideWithPlayer)
             return;
 
-        let launchDirection = Vector2.subtract(cursorPosition, this.position);
+        let launchDirection = Vector2.copy(this.player.launchDirection);
         launchDirection.setLength(this.launchSpeed);
         this.setSpeed(launchDirection);
         this.ignoreCollideWithPlayer = true;
@@ -416,17 +418,26 @@ class PlayerBall extends ComponentObject {
 
 class PlayerLaunchAngleArrow extends Component {
     length;
+    radianLimit;
     player;
     constructor(game, player) {
         super(game);
         this.length = 100;
+        this.radianLimit = Math.PI / 6;
         this.player = player;
     }
 
     update(delta) {
         let vectorToCursor = Vector2.subtract(cursorPosition, this.player.position);
-        vectorToCursor.setLength(this.length);
-        this.position = Vector2.plus(this.player.position, vectorToCursor);
+        let radian = vectorToCursor.toRadian();
+        if (-this.radianLimit < radian && radian < Math.PI / 2)
+            radian = -this.radianLimit;
+        if (Math.PI / 2 < radian || radian < this.radianLimit - Math.PI)
+            radian = this.radianLimit - Math.PI;
+
+        let arrowDirection = Vector2.fromRadian(radian);
+        this.player.launchDirection = Vector2.copy(arrowDirection);
+        this.position = arrowDirection.setLength(this.length).plus(this.player.position);
     }
 
     draw(ctx) {
