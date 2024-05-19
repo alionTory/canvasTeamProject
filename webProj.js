@@ -13,7 +13,7 @@ var img_pawnBody = new Image(); img_pawnBody.src = "imgFolder/pawnBody.png";
 var img_knightBody = new Image(); img_knightBody.src = "imgFolder/knightBody.png";
 var img_bishopBody = new Image(); img_bishopBody.src = "imgFolder/bishopBody.png";
 var img_rookBody = new Image(); img_rookBody.src = "imgFolder/rookBody.png";
-var img_qweenBody = new Image(); img_qweenBody.src = "imgFolder/qweenBody.png";
+var img_qweenBody = new Image(); img_qweenBody.src = "imgFolder/qweenBody3.png";
 
 var img_lazer = new Image(); img_lazer.src = "imgFolder/lazer.png";
 var img_bullet = new Image(); img_bullet.src = "imgFolder/bullet.png";
