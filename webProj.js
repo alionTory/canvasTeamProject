@@ -170,12 +170,11 @@ class Game {
     }
 
     levelStarter(level) { // 코어가 부서질 때 레벨을 올릴지 판단할 것.
-        //공 위치 초기화
-        this.playerBall.speed = new Vector2(0, 40);
-        this.playerBall.position = new Vector2(GAME_WIDTH / 2, GAME_HEIGHT - 150);
-
         //플레이어 위치 초기화
         this.player.position.x = GAME_WIDTH / 2;
+
+        //공 상태 초기화
+        this.playerBall.init();
 
         //몹 초기화
         this.mobList = [];
@@ -339,9 +338,9 @@ class Player extends ComponentObject {
     }
 
     processInput() {
-        if (gameInput.left) {
+        if (gameInput.left && 0 < this.position.x) {
             this.speed.set(-this.maxSpeed, 0);
-        } else if (gameInput.right) {
+        } else if (gameInput.right&& this.position.x < GAME_WIDTH) {
             this.speed.set(this.maxSpeed, 0);
         } else {
             this.speed.set(0, 0);
@@ -1051,7 +1050,7 @@ class Attacks extends ComponentObject {
 
     processCollision(collisionInfo) {////////////////////////////////////////
         this.game.removeComponent(this);
-        this.game.playerHurt(this.damage);
+        this.game.player.playerHurt(this.damage);
     }
 }
 
