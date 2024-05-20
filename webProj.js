@@ -820,8 +820,11 @@ class Box extends ComponentObject {
     processCollision(collisionInfo) {
         this.owner.processCollision(collisionInfo);
 
-        if (collisionInfo.component instanceof PlayerBall || collisionInfo.component instanceof PlayerBallExplosion) {
+        if (collisionInfo.component instanceof PlayerBall) {
             //충돌된 상자 제거
+            this.destroyBox();
+        }
+        else if (collisionInfo.component instanceof PlayerBallExplosion && !(this instanceof CoreBox)) {
             this.destroyBox();
         }
     }
