@@ -263,7 +263,8 @@ class Game {
 
         //적공격들 초기화
         for (let comp of this.components) {
-            if (!(comp instanceof Player) && !(comp instanceof PlayerBall) && !(comp instanceof PlayerLaunchAngleArrow))
+            if (!(comp instanceof Player) && !(comp instanceof PlayerBall)
+                && !(comp instanceof PlayerLaunchAngleArrow) && !(comp instanceof Anime_background))
                 this.removeComponent(comp);
         }
     }
