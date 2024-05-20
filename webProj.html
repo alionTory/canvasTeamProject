@@ -9,6 +9,7 @@
     <script src="physics.js"></script>
     <script src="webProj.js"></script>
     <script src="shop.js"></script>
+    <script src="mainAndBackground.js"></script>
     <title></title>
 </head>
 
@@ -171,6 +172,48 @@
             </div>
         </div>
     </section>
+    <canvas id="shootingStarCanvas"></canvas>
+    <div class="earth-container">
+        <img src="imgFolder/earth.png" alt="Pixel Earth" class="earth-image">
+    </div>
+    <div id="mainMenu" class="menu visible">
+        <div class="title neon" id="title">
+            <span class="universe">Universe</span>
+            <span class="explorer">Explorer</span>
+        </div>
+        <button id="startGame">Game Start</button>
+        <button id="settings">Settings</button>
+    </div>
+    <div id="difficultyMenu" class="difficulty">
+        <button class="difficultyBtn" data-difficulty="easy">EASY</button>
+        <button class="difficultyBtn" data-difficulty="medium">NORMAL</button>
+        <button class="difficultyBtn" data-difficulty="hard">HARD</button>
+        <button id="backToMainFromDifficulty">Back</button>
+    </div>
+    <div id="settingsMenu" class="settings">
+        <button id="changeSkin">Change Player Skin</button>
+        <button id="changeVolume">Volume</button>
+        <button id="backToMenu">Back</button>
+    </div>
+
+    <!-- 스킨 선택을 위한 새로운 요소 -->
+    <div id="skinSelector" class="settings" style="display:none;">
+        <div id="skin">
+        <button id="prevSkin" class="arrow">◀</button>
+        <img id="skinPreview" src="imgFolder/player.png" alt="Player Skin">
+        <button id="nextSkin" class="arrow">▶</button>
+        </div>
+        <button class="backToSettings" id="backFromSkin">Back to Settings</button>
+    </div>
+
+    
+    <!-- 음량 조절을 위한 새로운 팝업 메뉴 -->
+    <div id="volumeMenu" class="settings" style="display:none;">
+        <input type="range" id="volumeSlider" min="0" max="1" step="0.01" value="0.5">
+        <label for="volumeSlider">Volume</label>
+        <button class="backToSettings" id="backFromVol">Back to Settings</button>
+    </div>
+    
 
 </body>
 

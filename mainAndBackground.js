@@ -1,7 +1,4 @@
 $(function () {
-    const gameCanvas = $("#gameCanvas");
-    const gameCtx = gameCanvas[0].getContext("2d");
-
     $('#startGame').click(function () {
         $('#mainMenu').removeClass('visible');
         $('#difficultyMenu').addClass('visible');
@@ -111,121 +108,122 @@ $(function () {
         $('#settingsMenu').show();
     });
 
-});
-// Canvas 설정
-const starCanvas = document.getElementById('shootingStarCanvas');
-const ctx = starCanvas.getContext('2d');
-starCanvas.width = window.innerWidth;
-starCanvas.height = window.innerHeight;
+    // Canvas 설정
+    const starCanvas = document.getElementById('shootingStarCanvas');
+    const ctx = starCanvas.getContext('2d');
+    starCanvas.width = window.innerWidth;
+    starCanvas.height = window.innerHeight;
 
-// 별을 저장할 배열
-const stars = [];
-const shootingStars = [];
+    // 별을 저장할 배열
+    const stars = [];
+    const shootingStars = [];
 
-// 별 클래스
-class Star {
-    constructor(x, y, size, velocity) {
-        this.x = x;
-        this.y = y;
-        this.size = size;
-        this.velocity = velocity;
-    }
-
-    draw() {
-        ctx.fillStyle = '#fff';
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-        ctx.fill();
-    }
-
-    update() {
-        this.x -= this.velocity;
-        if (this.x < -this.size) {
-            this.x = starCanvas.width + this.size;
-            this.y = Math.random() * starCanvas.height;
+    // 별 클래스
+    class Star {
+        constructor(x, y, size, velocity) {
+            this.x = x;
+            this.y = y;
+            this.size = size;
+            this.velocity = velocity;
         }
-        this.draw();
-    }
-}
 
-// 별똥별 클래스
-class ShootingStar {
-    constructor() {
-        this.x = Math.random() * starCanvas.width;
-        this.y = 0;
-        this.length = Math.random() * 80 + 10;
-        this.velocity = Math.random() * 10 + 6;
-        this.opacity = 1;
-        this.fade = 0.03;
-    }
-
-    draw() {
-        ctx.strokeStyle = `rgba(255, 255, 255, ${this.opacity})`;
-        ctx.beginPath();
-        ctx.moveTo(this.x, this.y);
-        ctx.lineTo(this.x + this.length, this.y + this.length);
-        ctx.stroke();
-    }
-
-    update() {
-        if (this.opacity > 0) {
-            this.opacity -= this.fade;
+        draw() {
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fill();
         }
-        this.x += this.velocity;
-        this.y += this.velocity;
-        if (this.opacity > 0) {
+
+        update() {
+            this.x -= this.velocity;
+            if (this.x < -this.size) {
+                this.x = starCanvas.width + this.size;
+                this.y = Math.random() * starCanvas.height;
+            }
             this.draw();
         }
     }
-}
 
-// 별 생성
-function initStars() {
-    const starCount = 150;
-    for (let i = 0; i < starCount; i++) {
-        const x = Math.random() * starCanvas.width;
-        const y = Math.random() * starCanvas.height;
-        const size = Math.random() * 2;
-        const velocity = Math.random() * 0.5 + 0.1;
-        stars.push(new Star(x, y, size, velocity));
-    }
-}
-
-// 별똥별 생성
-function initShootingStars() {
-    if (Math.random() > 0.97) {
-        shootingStars.push(new ShootingStar());
-    }
-}
-
-// 애니메이션
-function animate() {
-    ctx.clearRect(0, 0, starCanvas.width, starCanvas.height);
-    stars.forEach(star => star.update());
-    shootingStars.forEach((shootingStar, index) => {
-        shootingStar.update();
-        if (shootingStar.opacity <= 0) {
-            shootingStars.splice(index, 1);
+    // 별똥별 클래스
+    class ShootingStar {
+        constructor() {
+            this.x = Math.random() * starCanvas.width;
+            this.y = 0;
+            this.length = Math.random() * 80 + 10;
+            this.velocity = Math.random() * 10 + 6;
+            this.opacity = 1;
+            this.fade = 0.03;
         }
-    });
-    initShootingStars();
-    requestAnimationFrame(animate);
-}
 
-// 초기화 및 애니메이션 시작
-initStars();
-animate();
+        draw() {
+            ctx.strokeStyle = `rgba(255, 255, 255, ${this.opacity})`;
+            ctx.beginPath();
+            ctx.moveTo(this.x, this.y);
+            ctx.lineTo(this.x + this.length, this.y + this.length);
+            ctx.stroke();
+        }
 
-// 창 크기 조정 시 캔버스 크기 조정
-window.addEventListener('resize', function () {
-    starCanvas.width = window.innerWidth;
-    starCanvas.height = window.innerHeight;
-    stars.length = 0;
+        update() {
+            if (this.opacity > 0) {
+                this.opacity -= this.fade;
+            }
+            this.x += this.velocity;
+            this.y += this.velocity;
+            if (this.opacity > 0) {
+                this.draw();
+            }
+        }
+    }
+
+    // 별 생성
+    function initStars() {
+        const starCount = 150;
+        for (let i = 0; i < starCount; i++) {
+            const x = Math.random() * starCanvas.width;
+            const y = Math.random() * starCanvas.height;
+            const size = Math.random() * 2;
+            const velocity = Math.random() * 0.5 + 0.1;
+            stars.push(new Star(x, y, size, velocity));
+        }
+    }
+
+    // 별똥별 생성
+    function initShootingStars() {
+        if (Math.random() > 0.97) {
+            shootingStars.push(new ShootingStar());
+        }
+    }
+
+    // 애니메이션
+    function animate() {
+        ctx.clearRect(0, 0, starCanvas.width, starCanvas.height);
+        stars.forEach(star => star.update());
+        shootingStars.forEach((shootingStar, index) => {
+            shootingStar.update();
+            if (shootingStar.opacity <= 0) {
+                shootingStars.splice(index, 1);
+            }
+        });
+        initShootingStars();
+        requestAnimationFrame(animate);
+    }
+
+    // 초기화 및 애니메이션 시작
     initStars();
-});
+    animate();
 
-function adjustVolume(volume) {
-    // 배경 음악 요소를 찾아 음량 설정
-    // document.getElementById('backgroundMusic').volume = volume;
-    console.log("Volume set to: " + volume);
-}
+    // 창 크기 조정 시 캔버스 크기 조정
+    window.addEventListener('resize', function () {
+        starCanvas.width = window.innerWidth;
+        starCanvas.height = window.innerHeight;
+        stars.length = 0;
+        initStars();
+    });
+
+    function adjustVolume(volume) {
+        // 배경 음악 요소를 찾아 음량 설정
+        // document.getElementById('backgroundMusic').volume = volume;
+        console.log("Volume set to: " + volume);
+    }
+
+});
