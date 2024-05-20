@@ -128,10 +128,6 @@ body, html {
     background: black;
     font-family: 'Silkscreen', cursive;
     height: 100%;
-    display: flex;
-    justify-content: flex-start; /* Adjusted to move elements up */
-    align-items: center;
-    flex-direction: column;
 }
 #gameCanvas {
     display: block;
@@ -148,6 +144,7 @@ body, html {
 }
 .menu, .settings, .difficulty {
     display: none;
+    position: relative; /* z-index를 적용하기 위함 */
     text-align: center;
     z-index: 10;
     margin-top: 130px; /* Adjusted to move elements down a bit */

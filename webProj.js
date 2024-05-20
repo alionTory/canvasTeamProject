@@ -44,7 +44,7 @@ MOVE_SPD_KING = 10;
 BALL_SPD_1 = 400;
 BALL_SPD_2 = 500;
 BALL_SPD_3 = 600;
-BALL_EXPLOTION_RAD =29;
+BALL_EXPLOTION_RAD = 29;
 
 // .......................................................................................................................
 
@@ -82,6 +82,8 @@ var img_fireL2 = new Image(); img_fireL2.src = "imgFolder/fireL2.png";
 var img_fireD = new Image(); img_fireD.src = "imgFolder/fireD.png";
 var img_fireD2 = new Image(); img_fireD2.src = "imgFolder/fireD2.png";
 
+let game = null;
+
 // jquery 공식 문서에서는 $(document).ready() 대신 $(function() {})을 사용하도록 권장함.
 $(function () {
     const gameCanvas = $("#game-canvas");
@@ -96,7 +98,7 @@ $(function () {
         console.log(cursorPosition);    // 디버그 용
     });
 
-    const game = new Game(gameCanvas[0].getContext("2d"));
+    game = new Game(gameCanvas[0].getContext("2d"));
 
     $(gameCanvas).hover(
         function () {
@@ -128,6 +130,7 @@ const GAME_HEIGHT = 700;
 
 class Game {
     level;
+    state;  // "main-menu", "paused", "game"
 
     ctx;
     fps;
@@ -145,6 +148,7 @@ class Game {
 
     constructor(ctx) {
         this.level = STARTLEVEL; // 임시
+        this.startMainMenu();
 
         this.ctx = ctx;
         this.fps = 60;
@@ -165,9 +169,19 @@ class Game {
         this.playerBall = new PlayerBall(this, this.player);
         this.playerArrow = new PlayerLaunchAngleArrow(this, this.player, this.playerBall);
         new Anime_background(this);
+        //this.levelStarter(this.level);
+    }
 
+    startMainMenu() {
+        this.state = "main-menu";
+        $("#game-section").hide();
+    }
 
-        this.levelStarter(this.level);
+    startGame(level) {
+        this.state = "game";
+        $("#game-section").show();
+        $("#main-menu-section").hide();
+        this.levelStarter(level);
     }
 
     processInput() {
@@ -195,9 +209,11 @@ class Game {
     }
     runLoop(timestamp) {
         requestAnimationFrame(this.runLoop.bind(this));
-        this.processInput();
-        this.updateGame(timestamp);
-        this.generateOutput();
+        if (this.state != "main-menu") {
+            this.processInput();
+            this.updateGame(timestamp);
+            this.generateOutput();
+        }
     }
 
     // components에 component를 정렬을 유지하며 추가
@@ -235,7 +251,7 @@ class Game {
         this.removalList = [];
     }
 
-    levelStarter(level) { // 코어가 부서질 때 레벨을 올릴지 판단할 것.
+    initGame() {
         //플레이어 위치 초기화
         this.player.position.x = GAME_WIDTH / 2;
 
@@ -247,9 +263,13 @@ class Game {
 
         //적공격들 초기화
         for (let comp of this.components) {
-            if (comp instanceof Attacks)
+            if (!(comp instanceof Player) && !(comp instanceof PlayerBall) && !(comp instanceof PlayerLaunchAngleArrow))
                 this.removeComponent(comp);
         }
+    }
+
+    levelStarter(level) { // 코어가 부서질 때 레벨을 올릴지 판단할 것.
+        this.initGame();
 
         switch (level) {
             case 1:
@@ -958,7 +978,7 @@ class CoreBox extends Box {
             console.trace();
         }
         this.game.mobList.remove
-        
+
         // 레벨 올릴지 검사
         this.game.checkLevelUp();
 
@@ -1229,7 +1249,7 @@ class Mob_knight extends Mob {
         super(game, position);
 
         this.data =
-                 [["c", "O", "c"]
+            [["c", "O", "c"]
                 , [" ", "b", " "]];
 
         mobMaker(this, this.data);
@@ -1250,7 +1270,7 @@ class Mob_bishop extends Mob {
         super(game, position);
 
         this.data =
-                 [["M", " ", "N", " ", "M"]
+            [["M", " ", "N", " ", "M"]
                 , ["n", "n", "o", "n", "n"]
                 , ["m", " ", "b", " ", "m"]
                 , [" ", " ", "n", " ", " "]]
@@ -1272,7 +1292,7 @@ class Mob_rook extends Mob {
         super(game, position);
 
         this.data =
-                 [["N", "L", "N"]
+            [["N", "L", "N"]
                 , ["n", "O", "n"]
                 , ["n", "b", "n"]
                 , ["n", "n", "n"]]
@@ -1294,7 +1314,7 @@ class Mob_qween extends Mob {
         super(game, position);
 
         this.data =  //11 * 28
-                 [[" ", " ", "B", "B", "B", "B", "B", "B", "B", " ", " "]
+            [[" ", " ", "B", "B", "B", "B", "B", "B", "B", " ", " "]
                 , ["b", "b", "b", " ", " ", " ", " ", " ", "b", "b", "b"]
                 , ["b", " ", " ", " ", " ", " ", " ", " ", " ", " ", "b"]
                 , ["b", " ", "n", "n", "n", "n", "n", "n", "n", " ", "b"]
@@ -1339,7 +1359,7 @@ class Mob_king extends Mob {
         super(game, position);
 
         this.data =
-                 [["O"]];
+            [["O"]];
 
         mobMaker(this, this.data);
 

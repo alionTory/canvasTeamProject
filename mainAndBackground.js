@@ -1,4 +1,6 @@
 $(function () {
+    let gameObject = game;
+
     $('#startGame').click(function () {
         $('#mainMenu').removeClass('visible');
         $('#difficultyMenu').addClass('visible');
@@ -14,7 +16,8 @@ $(function () {
             level = 3;
         }
         $('#difficultyMenu').removeClass('visible');
-        startGame(level);
+        $('#mainMenu').addClass('visible');
+        gameObject.startGame(level);
     });
 
     $('#settings').click(function () {
