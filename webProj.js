@@ -912,34 +912,29 @@ class CoreBox extends Box {
 }
 
 class BarrierBox extends Box {
+    barrierState;  // "unbroken", "broken"
     constructor(game, position, owner, boost) {
         super(game, position, 30, 30, owner, boost);
         this.price = 95;
         this.drawOrder = 49; // 다른 box들은 50
+        this.barrierState = "unbroken";
     }
 
     destroyBox() {
-        if (this.destroyed)
+        if (this.barrierState == "unbroken") {
+            this.barrierState = "broken";
             return;
-
-        let explodeSize = 60;
-
-        setTimeout(boxChange.bind(this), 1);
-
-        function boxChange() {
-            this.owner.boxList.push(new NormalBox(this.game, this.relativePosition, this.owner));
-            this.game.removeComponent(this);
         }
 
-        //애니메이션
-        new Anime_explode(this.game, explodeSize, this);
-
-        this.destroyed = true;
+        super.destroyBox();
     }
 
     draw(ctx) {
         super.draw(ctx);
-        ctx.drawImage(img_barrierBox, this.position.x - this.width / 2, this.position.y - this.height / 2);
+        if (this.barrierState == "unbroken")
+            ctx.drawImage(img_barrierBox, this.position.x - this.width / 2, this.position.y - this.height / 2);
+        else
+            ctx.drawImage(img_normalBox, this.position.x - this.width / 2, this.position.y - this.height / 2);
     }
 }
 
