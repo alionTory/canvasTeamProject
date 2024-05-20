@@ -597,8 +597,6 @@ class PlayerBall extends ComponentObject {
             this.setState("reinforcing");
         else if (this.parryingCount == 0)
             this.setState("normal");
-
-        this.setState("reinforced");  // 폭발 코드 테스트용. 이 행은 삭제해야 함.
     }
 
     checkParryingAfterCollision(delta) {
