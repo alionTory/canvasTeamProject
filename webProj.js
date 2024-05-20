@@ -830,46 +830,12 @@ class Box extends ComponentObject {
         if (this.destroyed)
             return;
 
-        let toAddCoin = 0;
         let explodeSize = 60;
 
-        if (this instanceof CoreBox) { // 코어가 부서졌다면, 적 기체 제거 + 레벨증가조건 확인
-            for (let b of this.owner.boxList) {
-                this.game.removeComponent(b);
-                toAddCoin += b.price + 20; // 코어 부술 시 추가 코인
-            }
-
-            explodeSize = 120;
-
-            // owner도 components에서 제거
-            this.game.removeComponent(this.owner);
-            let mobListIndex = this.game.mobList.indexOf(this.owner);
-            if (mobListIndex != -1)
-                this.game.mobList.splice(mobListIndex, 1);
-            else {
-                console.error("destroyBox() : 코어를 소유한 mob이 mobList에 없습니다.")
-                console.trace();
-            }
-            this.game.mobList.remove
-            // 레벨 올릴지 검사
-            this.game.checkLevelUp();
-
-        } else if (this instanceof BarrierBox) {
-            setTimeout(boxChange.bind(this), 1);
-
-            function boxChange() {
-                this.owner.boxList.push(new NormalBox(this.game, this.relativePosition, this.owner));
-                this.game.removeComponent(this);
-            }
-
-        }
-        else {
-            this.game.removeComponent(this);
-            toAddCoin += this.price;
-        }
-
+        this.game.removeComponent(this);
         //코인 얻음
-        this.game.addCoin(toAddCoin);
+        this.game.addCoin(this.price);
+
 
         //애니메이션
         new Anime_explode(this.game, explodeSize, this);
@@ -908,6 +874,37 @@ class CoreBox extends Box {
         this.price = 200;
     }
 
+    destroyBox() {
+        if (this.destroyed)
+            return;
+
+        let toAddCoin = 0;
+        let explodeSize = 120;
+
+        for (let b of this.owner.boxList) {
+            this.game.removeComponent(b);
+            toAddCoin += b.price + 20; // 코어 부술 시 추가 코인
+        }
+
+        // owner도 components에서 제거
+        this.game.removeComponent(this.owner);
+        let mobListIndex = this.game.mobList.indexOf(this.owner);
+        if (mobListIndex != -1)
+            this.game.mobList.splice(mobListIndex, 1);
+        else {
+            console.error("destroyBox() : 코어를 소유한 mob이 mobList에 없습니다.")
+            console.trace();
+        }
+        this.game.mobList.remove
+        // 레벨 올릴지 검사
+        this.game.checkLevelUp();
+
+        //애니메이션
+        new Anime_explode(this.game, explodeSize, this);
+
+        this.destroyed = true;
+    }
+
     draw(ctx) {
         super.draw(ctx);
         ctx.drawImage(img_coreBox, this.position.x - this.width / 2, this.position.y - this.height / 2);
@@ -919,6 +916,25 @@ class BarrierBox extends Box {
         super(game, position, 30, 30, owner, boost);
         this.price = 95;
         this.drawOrder = 49; // 다른 box들은 50
+    }
+
+    destroyBox() {
+        if (this.destroyed)
+            return;
+
+        let explodeSize = 60;
+
+        setTimeout(boxChange.bind(this), 1);
+
+        function boxChange() {
+            this.owner.boxList.push(new NormalBox(this.game, this.relativePosition, this.owner));
+            this.game.removeComponent(this);
+        }
+
+        //애니메이션
+        new Anime_explode(this.game, explodeSize, this);
+
+        this.destroyed = true;
     }
 
     draw(ctx) {
