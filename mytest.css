@@ -1,0 +1,170 @@
+body, html {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background: black;
+    font-family: 'Silkscreen', cursive;
+    height: 100%;
+    display: flex;
+    justify-content: flex-start; /* Adjusted to move elements up */
+    align-items: center;
+    flex-direction: column;
+}
+#gameCanvas {
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+#shootingStarCanvas {
+    position: fixed;
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+.menu, .settings, .difficulty {
+    display: none;
+    text-align: center;
+    z-index: 10;
+    margin-top: 130px; /* Adjusted to move elements down a bit */
+}
+.menu.visible, .settings.visible, .difficulty.visible {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.menu button, .settings button, .difficulty button {
+    margin: 10px;
+    padding: 10px 20px;
+    font-size: 40px;
+    cursor: pointer;
+    color: #fff;
+    background: black;
+    border-left: 5px solid white;
+    border-top: 5px solid white;
+    transition: all 0.3s ease;
+    font-family: 'Silkscreen', cursive;
+}
+#settings {
+    font-size: 30px;
+}
+.menu button:hover, .settings button:hover, .difficulty button:hover {
+    background-color: white;
+    color: black;
+}
+.title {
+    color: white;
+    margin-bottom: 20px;
+    transition: text-shadow 1s ease-in-out;
+    text-align: center;
+    white-space: nowrap;
+}
+.title .universe {
+    font-size: 120px;
+    display: block;
+}
+.title .explorer {
+    font-size: 60px;
+    display: block;
+}
+.neon {
+    color: #fff;
+    padding: 0 20px; /* Added padding to prevent clipping */
+}
+.earth-container {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    text-align: center;
+}
+.earth-image {
+    width: 100%;
+    max-width: 1000px;
+}
+#gameContainer {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    z-index: 5;
+}
+
+
+.difficultyBtn {
+    background: linear-gradient(145deg, #1e3c72 0%, #2a5298 100%);
+    border: none;
+    color: #fff;
+    text-transform: uppercase;
+    font-weight: bold;
+    padding: 15px 30px;
+    font-size: 20px;
+    letter-spacing: 1px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    background-size: 200% 200%;
+    background-image: radial-gradient(circle at 100% 150%, #7833B6 24%, #4682B4 24%, #4682B4 28%, #7833B6 28%, #7833B6 36%, #4682B4 36%, #4682B4 40%, transparent 40%, transparent), radial-gradient(circle at 0 150%, #7833B6 24%, #4682B4 24%, #4682B4 28%, #7833B6 28%, #7833B6 36%, #4682B4 36%, #4682B4 40%, transparent 40%, transparent), radial-gradient(circle at 50% 100%, #4682B4 10%, #7833B6 10%, #7833B6 23%, #4682B4 23%, #4682B4 30%, #7833B6 30%, #7833B6 43%, #4682B4 43%, #4682B4 50%, #7833B6 50%, #7833B6 63%, #4682B4 63%, #4682B4 71%, transparent 71%, transparent), radial-gradient(circle at 100% 50%, #7833B6 5%, #4682B4 5%, #4682B4 15%, #7833B6 15%, #7833B6 20%, #4682B4 20%, #4682B4 29%, #7833B6 29%, #7833B6 34%, #4682B4 34%, #4682B4 44%, #7833B6 44%, #7833B6 49%, transparent 49%, transparent), radial-gradient(circle at 0 50%, #7833B6 5%, #4682B4 5%, #4682B4 15%, #7833B6 15%, #7833B6 20%, #4682B4 20%, #4682B4 29%, #7833B6 29%, #7833B6 34%, #4682B4 34%, #4682B4 44%, #7833B6 44%, #7833B6 49%, transparent 49%, transparent);
+}
+
+.difficultyBtn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+#volumeMenu {
+    margin: 300px 20px 20px 20px;
+    /*background: rgba(0, 0, 0, 0.8); /* 반투명 검은 배경 */
+    padding: 20px;
+    border-radius: 10px; /* 둥근 모서리 */
+}
+
+#volumeSlider {
+    width: 100%; /* 슬라이더 길이 */
+    margin: 10px 0; /* 상하 여백 */
+    appearance: none; /* 기본 스타일 제거 */
+    height: 15px; /* 슬라이더 높이 */
+    background: #ddd; /* 슬라이더 배경색 */
+    outline: none; /* 외곽선 제거 */
+}
+
+#volumeSlider::-webkit-slider-thumb {
+    appearance: none; /* 기본 스타일 제거 */
+    width: 25px; /* 조절 핸들 너비 */
+    height: 45px; /* 조절 핸들 높이 */
+    background: white; /* 조절 핸들 색상 */
+    cursor: pointer; /* 커서 모양 변경 */
+}
+
+
+label{
+    display: none;
+}
+#skinSelector {
+    display: block;
+    text-align: center;
+    margin: 300px 20px 20px 20px;
+}
+
+.arrow {
+    display: inline-block;
+    cursor: pointer; 
+    font-size: 100px; 
+    background: none; 
+    border: none; 
+    color: white; 
+}
+
+#skinPreview {
+    width: 150px; /* 스킨 미리보기 이미지 크기 */
+    margin: 0 100px; /* 좌우 여백 */
+}
+#backFromVol, #backFromSkin{
+    margin-top: 50px;
+}
+#skin{
+    display: block;
+}
+#skin button{
+    cursor:pointer;
+    font-size: 40px;
+    border: none;
+}
+
+
