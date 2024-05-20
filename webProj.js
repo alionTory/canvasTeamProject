@@ -540,19 +540,26 @@ class PlayerBall extends ComponentObject {
         if (collisionInfo.component instanceof Player) {
             this.collideWithPlayer();
         } else if (collisionInfo.component instanceof Mob || collisionInfo.component == "wall") {
-            if (collisionInfo.nearestPoint == "left" && this.speed.x < 0)
+            let collisionPoint = Vector2.copy(this.position);
+
+            if (collisionInfo.nearestPoint == "left" && this.speed.x < 0) {
                 this.speed.x *= -1;
-            else if (collisionInfo.nearestPoint == "right" && this.speed.x > 0)
+                collisionPoint.x -= this.radius;
+            } else if (collisionInfo.nearestPoint == "right" && this.speed.x > 0) {
                 this.speed.x *= -1;
-            if (collisionInfo.nearestPoint == "up" && this.speed.y < 0)
+                collisionPoint.x += this.radius;
+            } if (collisionInfo.nearestPoint == "up" && this.speed.y < 0) {
                 this.speed.y *= -1;
-            else if (collisionInfo.nearestPoint == "down" && this.speed.y > 0)
+                collisionPoint.y -= this.radius;
+            } else if (collisionInfo.nearestPoint == "down" && this.speed.y > 0) {
                 this.speed.y *= -1;
+                collisionPoint.y += this.radius;
+            }
 
             if (collisionInfo.component instanceof Mob) {
                 this.addBrokenBlockCount();
                 if (this.state == "reinforced") {
-                    new PlayerBallExplosion(this.game, this.position, this.explosionRadius);
+                    new PlayerBallExplosion(this.game, collisionPoint, this.explosionRadius);
                 }
             }
         }
