@@ -90,6 +90,7 @@ class Game {
     delta;
     previousTicks;
     components;  // drawOrder로 정렬된 Component 배열.
+    removalList;  // 삭제할 Component들을 담는 배열
     collideablesWithBall;  // 플레이어의 공과 충돌 가능한 ComponentObject들
     player;
     playerArrow;
@@ -99,13 +100,14 @@ class Game {
     mobList;
 
     constructor(ctx) {
-        this.level = 3; // 임시
+        this.level = 1; // 임시
 
         this.ctx = ctx;
         this.fps = 60;
         this.delta = 1 / this.fps;
         this.previousTicks = performance.now();
         this.components = [];
+        this.removalList = [];
         this.collideablesWithBall = [];
         this.loadComponents();
         //setInterval(this.runLoop.bind(this), this.delta * 1000);
@@ -137,6 +139,8 @@ class Game {
         for (let component of this.components) {
             component.update(this.delta);
         }
+
+        this.doRemoval();
     }
     generateOutput() {
         this.ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
@@ -165,14 +169,26 @@ class Game {
             this.components.splice(insertionIndex, 0, component);
         }
     }
-    // components 에서 component를 빈 공간이 생기지 않게 삭제.
+
+    // 실제로는 removalList에 component를 추가하는 역할
     removeComponent(component) {
-        let removeIndex = this.components.indexOf(component);
-        if (removeIndex == -1) {
-            console.error("Game removeComponent() : 배열에 지우려는 component가 없습니다.");
-            return;  // return문 추가
+        this.removalList.push(component);
+    }
+
+    // components 에서 removalList의 component들을 빈 공간이 생기지 않게 삭제.
+    doRemoval() {
+        for (let component of this.removalList) {
+            let removeIndex = this.components.indexOf(component);
+            if (removeIndex == -1)
+                console.error("Game removeComponent() : 배열에 지우려는 component가 없습니다.");
+            else
+                this.components.splice(removeIndex, 1);
+
+            removeIndex = this.collideablesWithBall.indexOf(component);
+            if (removeIndex != -1)
+                this.collideablesWithBall.splice(removeIndex, 1);
         }
-        this.components.splice(removeIndex, 1);
+        this.removalList = [];
     }
 
     levelStarter(level) { // 코어가 부서질 때 레벨을 올릴지 판단할 것.
@@ -186,14 +202,9 @@ class Game {
         this.mobList = [];
 
         //적공격들 초기화
-        let removal = []; // 조건문의 배열요소 삭제로 인한 오류 예방함.
         for (let comp of this.components) {
-            if (comp instanceof Attacks) {
-                removal.push(comp);
-            }
-        }
-        for (let comp of removal) {
-            this.removeComponent(comp);
+            if (comp instanceof Attacks)
+                this.removeComponent(comp);
         }
 
         switch (level) {
@@ -440,6 +451,7 @@ class Player extends ComponentObject {
 class PlayerBall extends ComponentObject {
     player;
     radius;
+    explosionRadius;  // 강화된 공이 충돌 시 근처 블록을 부수는 범위.
     state;  // "generating", "normal", "reinforcing", "reinforced"
     generatingDelay;
     leftTimeForGenerating;
@@ -451,12 +463,13 @@ class PlayerBall extends ComponentObject {
     ignoreCollideWithPlayer;  // 플레이어와 충돌한 뒤에 일정 시간동안 플레이어와 충돌하지 않도록 함.
     // 공이 플레이어와 부딪힌 뒤 몇 개의 블럭을 부수었는지 기록. 일정 개수 이상의 블록을 부수면 강화됨.
     // 주의 : 강화되는 순간 brokenBlockCount는 0으로 초기화됨. 따라서 실제 부순 블록 개수와는 달라질 수 있음.
-    brokenBlockCount;  
+    brokenBlockCount;
 
     constructor(game, player) {
         super(game);
         this.player = player;
         this.radius = 10;
+        this.explosionRadius = 50;
         this.generatingDelay = 2;
         this.launchSpeedList = [300, 500, 700];
         this.launchSpeed = this.launchSpeedList[0];
@@ -536,8 +549,12 @@ class PlayerBall extends ComponentObject {
             else if (collisionInfo.nearestPoint == "down" && this.speed.y > 0)
                 this.speed.y *= -1;
 
-            if (collisionInfo.component instanceof Mob)
+            if (collisionInfo.component instanceof Mob) {
                 this.addBrokenBlockCount();
+                if (this.state == "reinforced") {
+                    new PlayerBallExplosion(this.game, this.position, this.explosionRadius);
+                }
+            }
         }
     }
 
@@ -545,11 +562,11 @@ class PlayerBall extends ComponentObject {
         if (this.ignoreCollideWithPlayer)
             return;
 
-        this.updateParrying();
         this.brokenBlockCount = 0;
         let launchDirection = Vector2.subtract(fixedCursorPosition, this.position);
         launchDirection.setLength(this.launchSpeed);
         this.setSpeed(launchDirection);
+        this.updateParrying();
         this.ignoreCollideWithPlayer = true;
     }
 
@@ -580,6 +597,8 @@ class PlayerBall extends ComponentObject {
             this.setState("reinforcing");
         else if (this.parryingCount == 0)
             this.setState("normal");
+
+        this.setState("reinforced");  // 폭발 코드 테스트용. 이 행은 삭제해야 함.
     }
 
     checkParryingAfterCollision(delta) {
@@ -609,14 +628,15 @@ class PlayerBall extends ComponentObject {
                 this.launchSpeed = this.launchSpeedList[2];
                 break;
         }
-        this.speed.setLength(this.launchSpeed);
+        if (this.speed.getLength() != 0)
+            this.speed.setLength(this.launchSpeed);
     }
 
     // normal 상태일 때 블럭 5개를 부수면 reinforcing 상태가 됨. brokenBlockCount는 0으로 초기화.
     // reinforcing 상태일 때 블럭 8개를 부수면 reinforced 상태가 됨. brokenBlockCount는 0으로 초기화.
     addBrokenBlockCount() {
         this.brokenBlockCount++;
-        if(this.brokenBlockCount >= 5 &&this.state == "normal") {
+        if (this.brokenBlockCount >= 5 && this.state == "normal") {
             this.setState("reinforcing");
             this.brokenBlockCount = 0;
         } else if (this.brokenBlockCount >= 10 && this.state == "reinforcing") {
@@ -673,6 +693,39 @@ class PlayerBall extends ComponentObject {
 
 }
 
+// 강화된 공의 폭발 효과를 처리. 현재는 주변 블록과의 충돌 처리만 맡고 있음.
+class PlayerBallExplosion extends ComponentObject {
+    radius;
+    leftExplosionTime;
+
+    constructor(game, position, radius) {
+        super(game);
+        this.position.copyFrom(position);
+        this.radius = radius;
+        // 폭발 애니메이션을 대비해 일단 1초간 존재하도록 함.
+        // 애니메이션을 딴 클래스에 넣는다면 충돌 처리만 하고 바로 삭제되도록 수정 필요.
+        this.leftExplosionTime = 1;
+        this.shape = new ShapeCircle(this, this.position, this.radius);
+        this.checkCollisionAtConstruct();
+    }
+
+    // 생성될 때 한 번만 충돌 처리.
+    checkCollisionAtConstruct() {
+        for (let collideable of this.game.collideablesWithBall) {
+            if (this.game.components.indexOf(collideable) >= 0) {
+                ComponentObject.checkCollision(this, collideable);
+            }
+        }
+    }
+
+    update(delta) {
+        this.leftExplosionTime -= delta;
+        if (this.leftExplosionTime <= 0)
+            this.game.removeComponent(this);
+    }
+
+}
+
 /**
  * 플레이어의 공 발사각을 설정하고
  * 발사각을 나타내는 화살표를 그리는 Component
@@ -716,6 +769,7 @@ class Box extends ComponentObject {
     height;
     owner;
     price;
+    distroyed;  // destroyBox 중복 호출 방지
 
     createdTick;
 
@@ -726,6 +780,7 @@ class Box extends ComponentObject {
         this.width = width;
         this.height = height;
         this.owner = owner;
+        this.destroyed = false;
         // Box의 위치 정보는 ShapeAABB의 2, 3 번째 매개변수로 전달됨.
         // 추가로 필요할 수 있는 건 속도 정보.
         // 그런데 Box의 속도는 무의미하므로 대신 owner의 속도 정보에 접근할 수 있도록 함.
@@ -765,13 +820,16 @@ class Box extends ComponentObject {
     processCollision(collisionInfo) {
         this.owner.processCollision(collisionInfo);
 
-        if (collisionInfo.component instanceof PlayerBall) {
+        if (collisionInfo.component instanceof PlayerBall || collisionInfo.component instanceof PlayerBallExplosion) {
             //충돌된 상자 제거
             this.destroyBox();
         }
     }
 
     destroyBox() {
+        if (this.destroyed)
+            return;
+
         let toAddCoin = 0;
         let explodeSize = 60;
 
@@ -785,7 +843,13 @@ class Box extends ComponentObject {
 
             // owner도 components에서 제거
             this.game.removeComponent(this.owner);
-            this.game.mobList.splice(this.game.mobList.indexOf(this.owner), 1);
+            let mobListIndex = this.game.mobList.indexOf(this.owner);
+            if (mobListIndex != -1)
+                this.game.mobList.splice(mobListIndex, 1);
+            else {
+                console.error("destroyBox() : 코어를 소유한 mob이 mobList에 없습니다.")
+                console.trace();
+            }
             this.game.mobList.remove
             // 레벨 올릴지 검사
             this.game.checkLevelUp();
@@ -809,6 +873,8 @@ class Box extends ComponentObject {
 
         //애니메이션
         new Anime_explode(this.game, explodeSize, this);
+
+        this.destroyed = true;
     }
 
     updateShape() {
@@ -936,6 +1002,7 @@ class Mob extends ComponentObject {
     leastSpeed;
     movingSpeed;
     data;
+    onKnockBack;  // 강화된 공의 폭발 공격으로 인해, 한 프레임에 넉백을 중복해서 받는 것을 방지하기 위함.
 
     arrivalPosY; // 몹이 생성되고 지정된 위치에 도착한다면 느려짐.
 
@@ -945,6 +1012,7 @@ class Mob extends ComponentObject {
         super(game);
         this.leastSpeed = new Vector2(0, 300); // 몹이 추구하는 속도
         this.movingSpeed = new Vector2(0, 5); // 몹이 맵에 도착하면 leastSpeed를 이것으로 바꿀것임
+        this.onKnockBack = false;
         this.position = new Vector2(position.x, position.y - 700);
         this.arrivalPosY = position.y;
 
@@ -954,10 +1022,13 @@ class Mob extends ComponentObject {
     }
 
     processCollision(collisionInfo) {
-        if (collisionInfo.component instanceof PlayerBall) {
+        if (collisionInfo.component instanceof PlayerBall || collisionInfo.component instanceof PlayerBallExplosion) {
             // 넉백
-            let newSpeed = Vector2.subtract(this.position, collisionInfo.nearestPoint).setLength(collisionInfo.component.speed.getLength());
-            this.speed = newSpeed;
+            if (!this.onKnockBack) {
+                let newSpeed = Vector2.subtract(this.position, collisionInfo.nearestPoint).setLength(this.game.playerBall.speed.getLength());
+                this.speed = newSpeed;
+                this.onKnockBack = true;
+            }
         } else if (collisionInfo.component == "wall") {
             if (collisionInfo.nearestPoint == "left" || collisionInfo.nearestPoint == "right")
                 this.speed.x *= -1;
@@ -967,6 +1038,7 @@ class Mob extends ComponentObject {
     }
 
     update(delta) {
+        this.onKnockBack = false;
         this.updateSpeed(delta);
         super.update(delta);
         this.isArrived();

@@ -9,6 +9,9 @@ class Vector2 {
     static copy(vector) {
         return new Vector2(vector.x, vector.y);
     }
+    copyFrom(vector) {
+        this.set(vector.x, vector.y);
+    }
 
     set(x, y) {
         this.x = x;
@@ -52,6 +55,7 @@ class Vector2 {
         let vectorLength = this.getLength();
         if (vectorLength == 0) {
             console.error("Vector2 nomalize error : 길이가 0인 벡터를 정규화할 수 없습니다.");
+            console.trace();
             return;
         }
         this.x /= vectorLength;
@@ -135,7 +139,7 @@ class ShapeCircle extends Shape {
             // 디버깅용
             if (whatSide == null) {
                 console.error("getCollisionInfo : 추정된 충돌지점이 상자의 변에 존재하지 않습니다.");
-                console.log(`collisionPoint : (${circleCollisionInfo.nearestPoint.x}, ${circleCollisionInfo.nearestPoint.y})`);
+                console.log(`collisionPoint : (${nearestPoint.x}, ${nearestPoint.y})`);
                 console.log(`AABB : (${shape.min.x}, ${shape.min.y}), (${shape.max.x}, ${shape.max.y})`);
             }
             return [circleCollisionInfo, boxCollisionInfo];
