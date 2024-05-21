@@ -179,8 +179,9 @@ class Game {
 
     startGame(level) {
         this.state = "game";
-        $("#game-section").show();
+        this.level = level;
         $("#main-menu-section").hide();
+        $("#game-section").show();
         this.levelStarter(level);
     }
 
