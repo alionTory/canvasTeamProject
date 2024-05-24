@@ -220,6 +220,8 @@ class Game {
             for (let button of this.pauseScreenButtons) {
                 button.processInput();
             }
+            if (gameInput.esc)
+                this.state = "game";
         }
         gameInput.click = gameInput.esc = false;
     }
