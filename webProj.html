@@ -1,18 +1,129 @@
 <!-- prototype.html -->
 <!doctype html>
 <html>
+
 <head>
     <meta charset="utf-8">
+    <link href="https://fonts.googleapis.com/css2?family=Jersey+10&family=Silkscreen:wght@400;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/galmuri/dist/galmuri.css">
     <link rel="stylesheet" href="webProj.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="physics.js"></script>
     <script src="webProj.js"></script>
+    <script src="shop.js"></script>
+    <script src="mainAndBackground.js"></script>
     <title></title>
 </head>
+
 <body>
     <section id="game-section">
-        <canvas id="game-canvas" width="500" height="700"></canvas>
+        <div id="align-game-and-shop">
+            <canvas id="game-canvas" width="500" height="700"></canvas>
+            <div id="store">
+                <div id="weapon">
+                    <div class="img">
+                        <img src="imgFolder\bullet.png">
+                        <img src="imgFolder\cannon.png">
+                        <img src="imgFolder\lazer.png">
+                    </div>
+                    <div class="weapon">
+                        <div>총</div>
+                        <div>대포</div>
+                        <div>레이저</div>
+                    </div>
+                    <div class="weapon">
+                        <button class="bullet">buy</button>
+                        <button class="cannon">buy</button>
+                        <button class="lazer">buy</button>
+                    </div>
+                </div>
+                <div id="life">
+                    <div class="img">
+                        <img src="imgFolder\heart.png">
+                        <img src="imgFolder\heartplus.png">
+                        <img src="imgFolder\shield.png">
+                    </div>
+                    <div class="life">
+                        <div id="lifemax">생명 최대량 증가(3/3)</div>
+                        <div id="lifeplus">생명 회복</div>
+                        <div id="shield">보호막(2/2)</div>
+                    </div>
+                    <div class="life">
+                        <button id="lifeaddition">buy</button>
+                        <button id="lifepurchase">buy</button>
+                        <button id="shieldpurchase">buy</button>
+                    </div>
+                </div>
+
+                <div id="strong">
+                    <div id="img">
+                        <img src="imgFolder\parring.png">
+                        <img src="imgFolder\explosion.png">
+                        <img src="imgFolder\reload.png">
+                        <img src="imgFolder\stealth.png">
+                    </div>
+                    <div class="strong">
+                        <div id="parring">패링시간<br>0.2초 증가<br>(현재: 0.5초)</div>
+                        <div id="explosion">폭발 범위<br>증가<br>(현재: 0강)</div>
+                        <div id="reload">재장전 시간<br> 1초 감소<br>(현재: 1초)</div>
+                        <div id="stealth">은신 기능<br>(1/1)</div>
+                    </div>
+                    <div class="strong">
+                        <button id="parringtime">buy</button>
+                        <button id="explosionrange">buy</button>
+                        <button id="reloadtime">buy</button>
+                        <button id="stealthpurchase">buy</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <canvas id="shootingStarCanvas"></canvas>
+    <section id="main-menu-section">
+        <div class="earth-container">
+            <img src="imgFolder/earth.png" alt="Pixel Earth" class="earth-image">
+        </div>
+        <div id="mainMenu" class="menu visible">
+            <div class="title neon" id="title">
+                <span class="universe">Universe</span>
+                <span class="explorer">Explorer</span>
+            </div>
+            <button id="startGame">Game Start</button>
+            <button id="settings">Settings</button>
+        </div>
+        <div id="difficultyMenu" class="difficulty">
+            <button class="difficultyBtn" data-difficulty="easy">EASY</button>
+            <button class="difficultyBtn" data-difficulty="medium">NORMAL</button>
+            <button class="difficultyBtn" data-difficulty="hard">HARD</button>
+            <button id="backToMainFromDifficulty">Back</button>
+        </div>
+        <div id="settingsMenu" class="settings">
+            <button id="changeSkin">Change Player Skin</button>
+            <button id="changeVolume">Volume</button>
+            <button id="backToMenu">Back</button>
+        </div>
+
+        <!-- 스킨 선택을 위한 새로운 요소 -->
+        <div id="skinSelector" class="settings" style="display:none;">
+            <div id="skin">
+                <button id="prevSkin" class="arrow">◀</button>
+                <img id="skinPreview" src="imgFolder/player.png" alt="Player Skin">
+                <button id="nextSkin" class="arrow">▶</button>
+            </div>
+            <button class="backToSettings" id="backFromSkin">Back to Settings</button>
+        </div>
+
+
+        <!-- 음량 조절을 위한 새로운 팝업 메뉴 -->
+        <div id="volumeMenu" class="settings" style="display:none;">
+            <input type="range" id="volumeSlider" min="0" max="1" step="0.01" value="0.5">
+            <label for="volumeSlider">Volume</label>
+            <button class="backToSettings" id="backFromVol">Back to Settings</button>
+        </div>
     </section>
 
+
 </body>
+
 </html>
