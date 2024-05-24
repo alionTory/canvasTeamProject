@@ -230,26 +230,26 @@ body, html {
 }
 #volumeMenu {
     margin: 300px 20px 20px 20px;
-    /*background: rgba(0, 0, 0, 0.8); /* 반투명 검은 배경 */
     padding: 20px;
-    border-radius: 10px; /* 둥근 모서리 */
+    border-radius: 10px; 
 }
 
 #volumeSlider {
-    width: 100%; /* 슬라이더 길이 */
-    margin: 10px 0; /* 상하 여백 */
-    appearance: none; /* 기본 스타일 제거 */
-    height: 15px; /* 슬라이더 높이 */
-    background: #ddd; /* 슬라이더 배경색 */
-    outline: none; /* 외곽선 제거 */
+    display:block;
+    width: 50%; 
+    margin: 10px auto; 
+    appearance: none; 
+    height: 15px; 
+    background: #ddd; 
+    outline: none; 
 }
 
 #volumeSlider::-webkit-slider-thumb {
-    appearance: none; /* 기본 스타일 제거 */
-    width: 25px; /* 조절 핸들 너비 */
-    height: 45px; /* 조절 핸들 높이 */
-    background: white; /* 조절 핸들 색상 */
-    cursor: pointer; /* 커서 모양 변경 */
+    appearance: none; 
+    width: 25px;
+    height: 45px; 
+    background: white; 
+    cursor: pointer; 
 }
 
 
