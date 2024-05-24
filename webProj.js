@@ -1,6 +1,6 @@
-// Game.processInput이 끝날 때 무조건 click이 false가 되므로 주의.
+// Game.processInput이 끝날 때 무조건 click, esc가 false가 되므로 주의.
 // 클릭 이벤트는 processInput이 끝나기 전에 처리되야 함.
-const gameInput = { left: false, right: false, click: false, space: false };
+const gameInput = { left: false, right: false, click: false, space: false, esc: false };
 let cursorPosition = null;
 let fixedCursorPosition = null;
 
@@ -121,6 +121,9 @@ $(document).on("keydown", function (event) {
     if (event.code == "Space") {
         gameInput.space = true;
     }
+    if (event.code == "Escape") {
+        gameInput.esc = true;
+    }
 });
 $(document).on("keyup", function (event) {
     if (event.code == "KeyA") {
@@ -131,6 +134,9 @@ $(document).on("keyup", function (event) {
     }
     if (event.code == "Space") {
         gameInput.space = false;
+    }
+    if (event.code == "Escape") {
+        gameInput.esc = false;
     }
 });
 
@@ -156,6 +162,8 @@ class Game {
     coin;
     mobList;
 
+    pauseScreenButtons;
+
     constructor(ctx) {
         this.level = STARTLEVEL; // 임시
         this.startMainMenu();
@@ -167,6 +175,7 @@ class Game {
         this.components = [];
         this.removalList = [];
         this.collideablesWithBall = [];
+        this.pauseScreenButtons = [];
         this.loadComponents();
         //setInterval(this.runLoop.bind(this), this.delta * 1000);
         requestAnimationFrame(this.runLoop.bind(this));
@@ -179,12 +188,18 @@ class Game {
         this.playerBall = new PlayerBall(this, this.player);
         this.playerArrow = new PlayerLaunchAngleArrow(this, this.player, this.playerBall);
         new Anime_background(this);
-        //this.levelStarter(this.level);
+
+        let resume = new Button(this, new Vector2(GAME_WIDTH / 2, GAME_HEIGHT / 2 - 50), 130, 50, "pause");
+        resume.setEventHandler(function () { this.game.state = "game"; });
+        let toMainMenu = new Button(this, new Vector2(GAME_WIDTH / 2, GAME_HEIGHT / 2 + 50), 130, 50, "main menu");
+        toMainMenu.setEventHandler(function () { this.game.startMainMenu(); });
+
     }
 
     startMainMenu() {
         this.state = "main-menu";
         $("#game-section").hide();
+        $("#main-menu-section").show();
     }
 
     startGame(level) {
@@ -196,8 +211,17 @@ class Game {
     }
 
     processInput() {
-        this.player.processInput();
-        gameInput.click = false;
+        if (this.state == "game") {
+            this.player.processInput();
+            if (gameInput.esc)
+                this.state = "paused";
+        }
+        else if (this.state == "paused") {
+            for (let button of this.pauseScreenButtons) {
+                button.processInput();
+            }
+        }
+        gameInput.click = gameInput.esc = false;
     }
     updateGame(timestamp) {
         this.delta = (timestamp - this.previousTicks) / 1000;
@@ -205,13 +229,15 @@ class Game {
             this.delta = 0.05;
         this.previousTicks = timestamp;
 
-        for (let component of this.components) {
-            component.update(this.delta);
+        if (this.state == "game") {
+            for (let component of this.components) {
+                component.update(this.delta);
+            }
+
+            this.tryWaveCall();
+
+            this.doRemoval();
         }
-
-        this.tryWaveCall();
-
-        this.doRemoval();
     }
     generateOutput() {
         this.ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
@@ -276,14 +302,15 @@ class Game {
 
         //적공격들 초기화
         for (let comp of this.components) {
-            if (!(comp instanceof Player) && !(comp instanceof PlayerBall)
-                && !(comp instanceof PlayerLaunchAngleArrow) && !(comp instanceof Anime_background))
+            if (comp instanceof Box || comp instanceof Mob || comp instanceof Attacks)
                 this.removeComponent(comp);
         }
+        this.doRemoval();
     }
 
     levelStarter(level) { // 코어가 부서질 때 레벨을 올릴지 판단할 것.
         this.initGame();
+        console.log(this.components);
 
         switch (level) {
             case 1:
@@ -360,7 +387,7 @@ class Game {
             //레벨 업! 표시
 
             this.level++;
-            setTimeout(function() {this.levelStarter(this.level)}.bind(this), 2000);    
+            setTimeout(function () { this.levelStarter(this.level) }.bind(this), 2000);
 
         }
     }
@@ -378,9 +405,9 @@ class Component {
     game;
     position;
     drawOrder;
-    constructor(game) {
+    constructor(game, drawOrder = 100) {
         this.game = game;
-        this.drawOrder = 100;
+        this.drawOrder = drawOrder;
         this.position = new Vector2(0, 0);
         game.addComponent(this);
     }
@@ -439,6 +466,65 @@ class ComponentObject extends Component {
                 }
             }
         }
+    }
+}
+
+class Button extends Component {
+    width;
+    height;
+    text;
+    hover;
+    eventHandler;
+
+    constructor(game, position, width, height, text) {
+        super(game, 101);
+        this.game.pauseScreenButtons.push(this);
+        this.position.copyFrom(position);
+        this.width = width;
+        this.height = height;
+        this.text = text;
+        this.hover = false;
+        this.eventHandler = null;
+    }
+
+    setEventHandler(eventHandler) {
+        this.eventHandler = eventHandler;
+    }
+
+    processInput() {
+        if (this.game.state != "paused")
+            return;
+
+        if (this.position.x - this.width / 2 <= cursorPosition.x && cursorPosition.x <= this.position.x + this.width / 2
+            && this.position.y - this.height / 2 <= cursorPosition.y && cursorPosition.y <= this.position.y + this.height / 2)
+            this.hover = true;
+        else
+            this.hover = false;
+
+        if (gameInput.click && this.hover) {
+            this.eventHandler();
+        }
+    }
+
+    draw(ctx) {
+        if (this.game.state != "paused")
+            return;
+
+        ctx.save();
+
+        if (this.hover)
+            ctx.fillStyle = "red";
+        else
+            ctx.fillStyle = "blue";
+        ctx.fillRect(this.position.x - this.width / 2, this.position.y - this.height / 2, this.width, this.height);
+
+        ctx.fillStyle = "black";
+        ctx.font = "20px Silkscreen";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(this.text, this.position.x, this.position.y, this.width);
+
+        ctx.restore();
     }
 }
 
