@@ -4,6 +4,50 @@ const gameInput = { left: false, right: false, click: false };
 let cursorPosition = null;
 let fixedCursorPosition = null;
 
+// 밸런스 전역변수들.......................................................................................................
+// 나중에 상수여야하는 것들은 CONST 붙일것.
+STARTLEVEL = 1;
+
+PLAYER_HEART = 1000;
+PLAYER_SPD = 444;
+BALL_MISS_DMG = 50;
+
+BOX_PRICE_NORMAL = 30;
+BOX_PRICE_BARRIER = 40;
+BOX_PRICE_CANNON = 50;
+BOX_PRICE_MACHINEGUN = 60;
+BOX_PRICE_LAZER = 90;
+BOX_PRICE_CORE = 150;
+
+CANNON_COOL = 2000;
+CANNON_ERR = 30;
+CANNON_SPD = 200;
+CANNON_DMG = 10;
+
+MACHINEGUN_COOL = 3000;
+MACHINEGUN_ERR = 80;
+MACHINEGUN_SPD = 260;
+MACHINEGUN_DMG = 7;
+
+LAZER_COOL = 11111;
+LAZER_ERR = 0;
+LAZER_SPD = 50;
+LAZER_DMG = 99;
+
+MOVE_SPD_PAWN = 5;
+MOVE_SPD_KNIGHT = 5;
+MOVE_SPD_BISHOP = 5;
+MOVE_SPD_ROOK = 5;
+MOVE_SPD_QWEEN = 10;
+MOVE_SPD_KING = 10;
+
+BALL_SPD_1 = 400;
+BALL_SPD_2 = 500;
+BALL_SPD_3 = 600;
+BALL_EXPLOTION_RAD = 29;
+
+// .......................................................................................................................
+
 var img_normalBox = new Image(); img_normalBox.src = "imgFolder/normalBox.png";
 var img_cannonBox = new Image(); img_cannonBox.src = "imgFolder/cannonBox.png";
 var img_machinegunBox = new Image(); img_machinegunBox.src = "imgFolder/machinegunBox.png";
@@ -38,6 +82,8 @@ var img_fireL2 = new Image(); img_fireL2.src = "imgFolder/fireL2.png";
 var img_fireD = new Image(); img_fireD.src = "imgFolder/fireD.png";
 var img_fireD2 = new Image(); img_fireD2.src = "imgFolder/fireD2.png";
 
+let game = null;
+
 // jquery 공식 문서에서는 $(document).ready() 대신 $(function() {})을 사용하도록 권장함.
 $(function () {
     const gameCanvas = $("#game-canvas");
@@ -52,7 +98,7 @@ $(function () {
         console.log(cursorPosition);    // 디버그 용
     });
 
-    const game = new Game(gameCanvas[0].getContext("2d"));
+    game = new Game(gameCanvas[0].getContext("2d"));
 
     $(gameCanvas).hover(
         function () {
@@ -84,6 +130,7 @@ const GAME_HEIGHT = 700;
 
 class Game {
     level;
+    state;  // "main-menu", "paused", "game"
 
     ctx;
     fps;
@@ -100,7 +147,8 @@ class Game {
     mobList;
 
     constructor(ctx) {
-        this.level = 1; // 임시
+        this.level = STARTLEVEL; // 임시
+        this.startMainMenu();
 
         this.ctx = ctx;
         this.fps = 60;
@@ -121,9 +169,20 @@ class Game {
         this.playerBall = new PlayerBall(this, this.player);
         this.playerArrow = new PlayerLaunchAngleArrow(this, this.player, this.playerBall);
         new Anime_background(this);
+        //this.levelStarter(this.level);
+    }
 
+    startMainMenu() {
+        this.state = "main-menu";
+        $("#game-section").hide();
+    }
 
-        this.levelStarter(this.level);
+    startGame(level) {
+        this.state = "game";
+        this.level = level;
+        $("#main-menu-section").hide();
+        $("#game-section").show();
+        this.levelStarter(level);
     }
 
     processInput() {
@@ -151,9 +210,11 @@ class Game {
     }
     runLoop(timestamp) {
         requestAnimationFrame(this.runLoop.bind(this));
-        this.processInput();
-        this.updateGame(timestamp);
-        this.generateOutput();
+        if (this.state != "main-menu") {
+            this.processInput();
+            this.updateGame(timestamp);
+            this.generateOutput();
+        }
     }
 
     // components에 component를 정렬을 유지하며 추가
@@ -191,7 +252,7 @@ class Game {
         this.removalList = [];
     }
 
-    levelStarter(level) { // 코어가 부서질 때 레벨을 올릴지 판단할 것.
+    initGame() {
         //플레이어 위치 초기화
         this.player.position.x = GAME_WIDTH / 2;
 
@@ -203,9 +264,14 @@ class Game {
 
         //적공격들 초기화
         for (let comp of this.components) {
-            if (comp instanceof Attacks)
+            if (!(comp instanceof Player) && !(comp instanceof PlayerBall)
+                && !(comp instanceof PlayerLaunchAngleArrow) && !(comp instanceof Anime_background))
                 this.removeComponent(comp);
         }
+    }
+
+    levelStarter(level) { // 코어가 부서질 때 레벨을 올릴지 판단할 것.
+        this.initGame();
 
         switch (level) {
             case 1:
@@ -338,10 +404,10 @@ class Player extends ComponentObject {
         super(game);
         this.width = 81;
         this.height = 9;
-        this.maxSpeed = 500;
+        this.maxSpeed = PLAYER_SPD;
         this.launchDirection = new Vector2(0, -1);
         this.radianLimit = Math.PI / 6;
-        this.heart = 1000;
+        this.heart = PLAYER_HEART;
 
         // 공 패링 관련
         this.parryingCoolTime = 0.5;
@@ -469,9 +535,9 @@ class PlayerBall extends ComponentObject {
         super(game);
         this.player = player;
         this.radius = 10;
-        this.explosionRadius = 50;
+        this.explosionRadius = BALL_EXPLOTION_RAD;
         this.generatingDelay = 2;
-        this.launchSpeedList = [300, 500, 700];
+        this.launchSpeedList = [BALL_SPD_1, BALL_SPD_2, BALL_SPD_3];
         this.launchSpeed = this.launchSpeedList[0];
         this.init();
     }
@@ -540,19 +606,26 @@ class PlayerBall extends ComponentObject {
         if (collisionInfo.component instanceof Player) {
             this.collideWithPlayer();
         } else if (collisionInfo.component instanceof Mob || collisionInfo.component == "wall") {
-            if (collisionInfo.nearestPoint == "left" && this.speed.x < 0)
+            let collisionPoint = Vector2.copy(this.position);
+
+            if (collisionInfo.nearestPoint == "left" && this.speed.x < 0) {
                 this.speed.x *= -1;
-            else if (collisionInfo.nearestPoint == "right" && this.speed.x > 0)
+                collisionPoint.x -= this.radius;
+            } else if (collisionInfo.nearestPoint == "right" && this.speed.x > 0) {
                 this.speed.x *= -1;
-            if (collisionInfo.nearestPoint == "up" && this.speed.y < 0)
+                collisionPoint.x += this.radius;
+            } if (collisionInfo.nearestPoint == "up" && this.speed.y < 0) {
                 this.speed.y *= -1;
-            else if (collisionInfo.nearestPoint == "down" && this.speed.y > 0)
+                collisionPoint.y -= this.radius;
+            } else if (collisionInfo.nearestPoint == "down" && this.speed.y > 0) {
                 this.speed.y *= -1;
+                collisionPoint.y += this.radius;
+            }
 
             if (collisionInfo.component instanceof Mob) {
                 this.addBrokenBlockCount();
                 if (this.state == "reinforced") {
-                    new PlayerBallExplosion(this.game, this.position, this.explosionRadius);
+                    new PlayerBallExplosion(this.game, collisionPoint, this.explosionRadius);
                 }
             }
         }
@@ -645,7 +718,7 @@ class PlayerBall extends ComponentObject {
 
     checkBallMissed() {
         if (this.position.y >= this.radius + GAME_HEIGHT) {  // 공 놓침
-            this.player.playerHurt(330);
+            this.player.playerHurt(BALL_MISS_DMG);
             this.init();
         }
     }
@@ -768,6 +841,8 @@ class Box extends ComponentObject {
     owner;
     price;
     distroyed;  // destroyBox 중복 호출 방지
+    explodeSize;
+    bonusCoin;
 
     createdTick;
 
@@ -786,6 +861,9 @@ class Box extends ComponentObject {
         this.updateShape();
         this.drawOrder = 50;
         this.createdTick = this.game.previousTicks;
+
+        this.bonusCoin = 20;
+        this.explodeSize = 60;
 
         if (boost) {
             new Anime_boost(this.game, this);
@@ -827,19 +905,21 @@ class Box extends ComponentObject {
         }
     }
 
-    destroyBox() {
+    destroyBox(coreBroken) {
         if (this.destroyed)
             return;
 
-        let explodeSize = 60;
-
         this.game.removeComponent(this);
+
         //코인 얻음
         this.game.addCoin(this.price);
 
+        if (coreBroken) {
+            this.game.addCoin(this.bonusCoin);
+        }
 
         //애니메이션
-        new Anime_explode(this.game, explodeSize, this);
+        new Anime_explode(this.game, this.explodeSize, 0.02, this);
 
         this.destroyed = true;
     }
@@ -860,7 +940,7 @@ class Box extends ComponentObject {
 class NormalBox extends Box {
     constructor(game, position, owner, boost) {
         super(game, position, 30, 30, owner, boost);
-        this.price = 10;
+        this.price = BOX_PRICE_NORMAL;
     }
 
     draw(ctx) {
@@ -872,19 +952,22 @@ class NormalBox extends Box {
 class CoreBox extends Box {
     constructor(game, position, owner, boost) {
         super(game, position, 30, 30, owner, boost);
-        this.price = 200;
+        this.price = BOX_PRICE_CORE;
+
+        this.explodeSize = 80;
     }
 
-    destroyBox() {
+    destroyBox(coreBroken) {
         if (this.destroyed)
             return;
 
-        let toAddCoin = 0;
-        let explodeSize = 120;
+        if (coreBroken) {
+            super.destroyBox();
+            return;
+        }
 
         for (let b of this.owner.boxList) {
-            this.game.removeComponent(b);
-            toAddCoin += b.price + 20; // 코어 부술 시 추가 코인
+            b.destroyBox(true); // coreBroken = true -> 배리어 한번에 처리 + 보너스코인 + 무한루프방지
         }
 
         // owner도 components에서 제거
@@ -897,11 +980,9 @@ class CoreBox extends Box {
             console.trace();
         }
         this.game.mobList.remove
+
         // 레벨 올릴지 검사
         this.game.checkLevelUp();
-
-        //애니메이션
-        new Anime_explode(this.game, explodeSize, this);
 
         this.destroyed = true;
     }
@@ -916,18 +997,22 @@ class BarrierBox extends Box {
     barrierState;  // "unbroken", "broken"
     constructor(game, position, owner, boost) {
         super(game, position, 30, 30, owner, boost);
-        this.price = 95;
+        this.price = BOX_PRICE_BARRIER;
         this.drawOrder = 49; // 다른 box들은 50
         this.barrierState = "unbroken";
     }
 
-    destroyBox() {
+    destroyBox(coreBroken) {
+        if (coreBroken) {
+            super.destroyBox();
+        }
+
         if (this.barrierState == "unbroken") {
             this.barrierState = "broken";
             return;
         }
 
-        super.destroyBox();
+        super.destroyBox(coreBroken);
     }
 
     draw(ctx) {
@@ -944,8 +1029,8 @@ class CannonBox extends Box {
 
     constructor(game, position, owner, boost) {
         super(game, position, 30, 30, owner, boost);
-        this.price = 35;
-        this.coolTime = 2000;
+        this.price = BOX_PRICE_CANNON;
+        this.coolTime = CANNON_COOL;
     }
 
     draw(ctx) {
@@ -962,13 +1047,11 @@ class CannonBox extends Box {
 
 class MachinegunBox extends Box {
     coolTime;
-    shootGap;
 
     constructor(game, position, owner, boost) {
         super(game, position, 30, 30, owner, boost);
-        this.price = 70;
-        this.coolTime = 3000;
-        this.shootGap = 100;
+        this.price = BOX_PRICE_MACHINEGUN;
+        this.coolTime = MACHINEGUN_COOL;
     }
 
     draw(ctx) {
@@ -990,8 +1073,8 @@ class LazerBox extends Box {
 
     constructor(game, position, owner, boost) {
         super(game, position, 30, 30, owner, boost);
-        this.price = 100;
-        this.coolTime = 11111;
+        this.price = BOX_PRICE_LAZER;
+        this.coolTime = LAZER_COOL;
     }
 
     draw(ctx) {
@@ -1153,6 +1236,7 @@ class Mob_pawn extends Mob {
 
         mobMaker(this, this.data);
 
+        this.movingSpeed = new Vector2(0, MOVE_SPD_PAWN);
         this.resistance = 1000;
     }
 
@@ -1168,10 +1252,11 @@ class Mob_knight extends Mob {
 
         this.data =
             [["c", "O", "c"]
-                , [" ", "c", " "]];
+                , [" ", "b", " "]];
 
         mobMaker(this, this.data);
 
+        this.movingSpeed = new Vector2(0, MOVE_SPD_KNIGHT);
         this.resistance = 1500;
 
     }
@@ -1194,6 +1279,7 @@ class Mob_bishop extends Mob {
 
         mobMaker(this, this.data);
 
+        this.movingSpeed = new Vector2(0, MOVE_SPD_BISHOP);
         this.resistance = 1800;
     }
 
@@ -1215,6 +1301,7 @@ class Mob_rook extends Mob {
 
         mobMaker(this, this.data);
 
+        this.movingSpeed = new Vector2(0, MOVE_SPD_ROOK);
         this.resistance = 1800;
     }
 
@@ -1259,7 +1346,7 @@ class Mob_qween extends Mob {
                 , [" ", " ", " ", " ", " ", "b", " ", " ", " ", " ", " "]];
 
         mobMaker(this, this.data);
-        this.movingSpeed = new Vector2(0, 15);
+        this.movingSpeed = new Vector2(0, MOVE_SPD_QWEEN);
         this.resistance = 10000000;
     }
 
@@ -1274,13 +1361,11 @@ class Mob_king extends Mob {
         super(game, position);
 
         this.data =
-            [["N", "L", "N"]
-                , ["n", "O", "n"]
-                , ["n", "b", "n"]
-                , ["n", "n", "n"]]
+            [["O"]];
 
         mobMaker(this, this.data);
 
+        this.movingSpeed = new Vector2(0, MOVE_SPD_KING);
         this.resistance = 9000;
     }
 
@@ -1310,8 +1395,8 @@ class Attacks extends ComponentObject {
         this.err = err;
         this.angleError = Math.random() * this.err - 0.5 * err;
 
-        this.newSpeed = new Vector2((this.player.position.x - this.box.position.x), (this.player.position.y - this.box.position.y));
-        this.speed = new Vector2(this.spdScalar * this.newSpeed.x / this.newSpeed.y + this.angleError, this.spdScalar);
+        this.newSpeed = new Vector2((this.player.position.x - this.box.position.x + this.angleError), (this.player.position.y - this.box.position.y)).nomalize();
+        this.speed = this.newSpeed.multiply(this.spdScalar);
 
         this.shape = new ShapeCircle(this, this.position, this.radius);
 
@@ -1342,9 +1427,9 @@ class Attacks extends ComponentObject {
 class Cannon extends Attacks {
     constructor(game, box) {
         let radius = 10;
-        let spdScalar = 200;
-        let damage = 20;
-        let err = 30;
+        let spdScalar = CANNON_SPD;
+        let damage = CANNON_DMG;
+        let err = CANNON_ERR;
         super(game, box, radius, spdScalar, damage, err);
     }
 
@@ -1356,9 +1441,9 @@ class Cannon extends Attacks {
 class Bullet extends Attacks {
     constructor(game, box) {
         let radius = 5;
-        let spdScalar = 260;
-        let damage = 10;
-        let err = 80;
+        let spdScalar = MACHINEGUN_SPD;
+        let damage = MACHINEGUN_DMG;
+        let err = MACHINEGUN_ERR;
         super(game, box, radius, spdScalar, damage, err);
     }
     draw(ctx) {
@@ -1369,9 +1454,9 @@ class Bullet extends Attacks {
 class Lazer extends Attacks {
     constructor(game, box) {
         let radius = 30;
-        let spdScalar = 50;
-        let damage = 5;
-        let err = 0;
+        let spdScalar = LAZER_SPD;
+        let damage = LAZER_DMG;
+        let err = LAZER_ERR;
         super(game, box, radius, spdScalar, damage, err);
     }
     draw(ctx) {
@@ -1405,14 +1490,14 @@ class Anime_background extends Anime {
     }
 }
 
-class Anime_explode extends Anime { // 미완성
+class Anime_explode extends Anime {
     box;
 
-    constructor(game, size, box) {
+    constructor(game, size, spd, box) {
         super(game);
         this.size = size;
         this.opacity = 1;
-        this.spd = 0.02;
+        this.spd = spd;
         this.drawOrder = 98;
         this.box = box;
         this.position = Vector2.copy(this.box.position);
