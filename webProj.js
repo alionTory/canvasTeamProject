@@ -152,6 +152,7 @@ class Game {
     delta;
     previousTicks;
     components;  // drawOrder로 정렬된 Component 배열.
+    addList;  // 새로 생성할 Component들을 담는 배열
     removalList;  // 삭제할 Component들을 담는 배열
     collideablesWithBall;  // 플레이어의 공과 충돌 가능한 ComponentObject들
     player;
@@ -173,6 +174,7 @@ class Game {
         this.delta = 1 / this.fps;
         this.previousTicks = performance.now();
         this.components = [];
+        this.addList = [];
         this.removalList = [];
         this.collideablesWithBall = [];
         this.pauseScreenButtons = [];
@@ -231,6 +233,7 @@ class Game {
             this.delta = 0.05;
         this.previousTicks = timestamp;
 
+        this.doAdd();
         if (this.state == "game") {
             for (let component of this.components) {
                 component.update(this.delta);
@@ -259,16 +262,26 @@ class Game {
 
     // components에 component를 정렬을 유지하며 추가
     addComponent(component) {
-        let insertionIndex = this.components.findIndex(function (element) {
-            if (component.getDrawOrder() <= element.getDrawOrder())
-                return true;
-            return false;
-        });
-        if (insertionIndex == -1) {
-            this.components.push(component);
-        } else {
-            this.components.splice(insertionIndex, 0, component);
+        this.addList.push(component);
+    }
+
+    // drawOrder가 Component의 자식 생성자에서 수정되었을 수 있으므로,
+    // 수정 이후의 drawOrder 값을 반영할 수 있도록
+    // components에 바로 추가하지 않고, addList에 추가한 뒤 doAdd()에서 components에 추가.
+    doAdd() {
+        for (let component of this.addList) {
+            let insertionIndex = this.components.findIndex(function (element) {
+                if (component.getDrawOrder() <= element.getDrawOrder())
+                    return true;
+                return false;
+            });
+            if (insertionIndex == -1) {
+                this.components.push(component);
+            } else {
+                this.components.splice(insertionIndex, 0, component);
+            }
         }
+        this.addList = [];
     }
 
     // 실제로는 removalList에 component를 추가하는 역할
@@ -407,9 +420,9 @@ class Component {
     game;
     position;
     drawOrder;
-    constructor(game, drawOrder = 100) {
+    constructor(game) {
         this.game = game;
-        this.drawOrder = drawOrder;
+        this.drawOrder = 50;
         this.position = new Vector2(0, 0);
         game.addComponent(this);
     }
@@ -482,6 +495,7 @@ class Button extends Component {
         super(game, 101);
         this.game.pauseScreenButtons.push(this);
         this.position.copyFrom(position);
+        this.drawOrder = 101;
         this.width = width;
         this.height = height;
         this.text = text;
@@ -545,6 +559,7 @@ class Player extends ComponentObject {
     leftParryingPersistTime;
     constructor(game) {
         super(game);
+        this.drawOrder = 90;
         this.width = 81;
         this.height = 9;
         this.maxSpeed = PLAYER_SPD;
@@ -677,6 +692,7 @@ class PlayerBall extends ComponentObject {
     constructor(game, player) {
         super(game);
         this.player = player;
+        this.drawOrder = 91;
         this.radius = 10;
         this.explosionRadius = BALL_EXPLOTION_RAD;
         this.generatingDelay = 2;
@@ -950,6 +966,7 @@ class PlayerLaunchAngleArrow extends Component {
     ball;
     constructor(game, player, ball) {
         super(game);
+        this.drawOrder = 92;
         this.length = 100;
         this.player = player;
         this.ball = ball;
@@ -1141,7 +1158,7 @@ class BarrierBox extends Box {
     constructor(game, position, owner, boost) {
         super(game, position, 30, 30, owner, boost);
         this.price = BOX_PRICE_BARRIER;
-        this.drawOrder = 49; // 다른 box들은 50
+        this.drawOrder = 51; // 다른 box들은 50
         this.barrierState = "unbroken";
     }
 
@@ -1543,7 +1560,7 @@ class Attacks extends ComponentObject {
 
         this.shape = new ShapeCircle(this, this.position, this.radius);
 
-        this.drawOrder = 30;
+        this.drawOrder = 40;
     }
 
     update(delta) {
@@ -1625,7 +1642,7 @@ class Anime_background extends Anime {
         super(game);
         this.img = img_background1;
         this.spd = 0.01;
-        this.drawOrder = 99;
+        this.drawOrder = 1;
     }
 
     draw(ctx) {
@@ -1641,7 +1658,7 @@ class Anime_explode extends Anime {
         this.size = size;
         this.opacity = 1;
         this.spd = spd;
-        this.drawOrder = 98;
+        this.drawOrder = 2;
         this.box = box;
         this.position = Vector2.copy(this.box.position);
 
@@ -1676,7 +1693,7 @@ class Anime_boost extends Anime {
     box;
     constructor(game, box) {
         super(game);
-        this.drawOrder = 97;
+        this.drawOrder = 3;
         this.box = box;
         this.spd = 160;
         this.opacity = 0.35;
