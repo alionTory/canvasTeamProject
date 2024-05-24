@@ -10,7 +10,7 @@
 
 #game-canvas{
     display: block;
-    border:solid black;
+    border:solid white;
 }
 
 .hide_cursor {

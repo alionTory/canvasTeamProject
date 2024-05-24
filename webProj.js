@@ -1,6 +1,6 @@
 // Game.processInput이 끝날 때 무조건 click이 false가 되므로 주의.
 // 클릭 이벤트는 processInput이 끝나기 전에 처리되야 함.
-const gameInput = { left: false, right: false, click: false };
+const gameInput = { left: false, right: false, click: false, space: false };
 let cursorPosition = null;
 let fixedCursorPosition = null;
 
@@ -26,12 +26,12 @@ CANNON_DMG = 10;
 
 MACHINEGUN_COOL = 3000;
 MACHINEGUN_ERR = 80;
-MACHINEGUN_SPD = 260;
+MACHINEGUN_SPD = 360;
 MACHINEGUN_DMG = 7;
 
 LAZER_COOL = 11111;
 LAZER_ERR = 0;
-LAZER_SPD = 50;
+LAZER_SPD = 100;
 LAZER_DMG = 99;
 
 MOVE_SPD_PAWN = 5;
@@ -45,6 +45,9 @@ BALL_SPD_1 = 400;
 BALL_SPD_2 = 500;
 BALL_SPD_3 = 600;
 BALL_EXPLOTION_RAD = 29;
+
+WAVE_DEFAULT_DIST = 500;
+WAVE_DIST = 5000;
 
 // .......................................................................................................................
 
@@ -115,6 +118,9 @@ $(document).on("keydown", function (event) {
     if (event.code == "KeyD") {
         gameInput.right = true;
     }
+    if (event.code == "Space") {
+        gameInput.space = true;
+    }
 });
 $(document).on("keyup", function (event) {
     if (event.code == "KeyA") {
@@ -122,6 +128,9 @@ $(document).on("keyup", function (event) {
     }
     if (event.code == "KeyD") {
         gameInput.right = false;
+    }
+    if (event.code == "Space") {
+        gameInput.space = false;
     }
 });
 
@@ -143,6 +152,7 @@ class Game {
     playerArrow;
     playerBall;
 
+    wave;
     coin;
     mobList;
 
@@ -198,6 +208,8 @@ class Game {
         for (let component of this.components) {
             component.update(this.delta);
         }
+
+        this.tryWaveCall();
 
         this.doRemoval();
     }
@@ -275,13 +287,27 @@ class Game {
 
         switch (level) {
             case 1:
+                this.wave = 0;
                 this.mobList.push(new Mob_pawn(this, new Vector2(100, 200)));
                 this.mobList.push(new Mob_pawn(this, new Vector2(250, 200)));
                 this.mobList.push(new Mob_pawn(this, new Vector2(400, 200)));
                 this.mobList.push(new Mob_knight(this, new Vector2(250, 80)));
+
+                this.wave = 1;
+                this.mobList.push(new Mob_knight(this, new Vector2(250, 80)));
+                this.mobList.push(new Mob_knight(this, new Vector2(150, 180)));
+                this.mobList.push(new Mob_knight(this, new Vector2(350, 180)));
+
+                this.wave = 2;
+                this.mobList.push(new Mob_pawn(this, new Vector2(50, 100)));
+                this.mobList.push(new Mob_pawn(this, new Vector2(50, 200)));
+                this.mobList.push(new Mob_pawn(this, new Vector2(450, 100)));
+                this.mobList.push(new Mob_pawn(this, new Vector2(450, 200)));
+                this.mobList.push(new Mob_bishop(this, new Vector2(250, 80)));
                 break;
 
             case 2:
+                this.wave = 0;
                 this.mobList.push(new Mob_pawn(this, new Vector2(50, 100)));
                 this.mobList.push(new Mob_pawn(this, new Vector2(250, 300)));
                 this.mobList.push(new Mob_pawn(this, new Vector2(450, 100)));
@@ -291,11 +317,39 @@ class Game {
                 break;
 
             case 3:
+                this.wave = 0;
                 this.mobList.push(new Mob_qween(this, new Vector2(250, -600)));
                 break;
 
             default:
                 this.gameEnd();
+        }
+    }
+
+    getMostFrontMob() {
+        if (this.mobList.length == 0) return null;
+        let frontest = this.mobList[0];
+        for (let mob of this.mobList) {
+            if (mob.position.y > frontest.position.y) frontest = mob;
+        }
+        return frontest;
+    }
+
+    tryWaveCall() {
+        if (gameInput.space) {
+            for (let mob of this.mobList) {
+                if (mob.position.y > 0)
+                    return;
+            }
+
+            let frontest = this.getMostFrontMob();
+            if (frontest != null) {
+                for (let mob of this.mobList) {
+                    if (mob != frontest)
+                        mob.position.y -= frontest.position.y + 100;
+                }
+                frontest.position.y -= frontest.position.y + 100;
+            }
         }
     }
 
@@ -306,7 +360,8 @@ class Game {
             //레벨 업! 표시
 
             this.level++;
-            this.levelStarter(this.level);
+            setTimeout(function() {this.levelStarter(this.level)}.bind(this), 2000);    
+
         }
     }
 
@@ -1039,7 +1094,7 @@ class CannonBox extends Box {
 
     doAttack() {
         if (this.game.previousTicks - this.createdTick > this.coolTime && this.position.y > 0) {
-            this.createdTick = this.game.previousTicks;
+            this.createdTick = this.game.previousTicks + Math.random() * 500;
             new Cannon(this.game, this);
         }
     }
@@ -1060,7 +1115,7 @@ class MachinegunBox extends Box {
 
     doAttack() {
         if (this.game.previousTicks - this.createdTick > this.coolTime && this.position.y > 0) {
-            this.createdTick = this.game.previousTicks;
+            this.createdTick = this.game.previousTicks + Math.random() * 500;
             new Bullet(this.game, this);
             new Bullet(this.game, this);
             new Bullet(this.game, this);
@@ -1083,7 +1138,7 @@ class LazerBox extends Box {
 
     doAttack() {
         if (this.game.previousTicks - this.createdTick > this.coolTime && this.position.y > 0) {
-            this.createdTick = this.game.previousTicks;
+            this.createdTick = this.game.previousTicks + Math.random() * 500;
             new Lazer(this.game, this);
         }
     }
@@ -1103,12 +1158,12 @@ class Mob extends ComponentObject {
 
     prepareAtk;
 
-    constructor(game, position) {
+    constructor(game, position, wave) {
         super(game);
         this.leastSpeed = new Vector2(0, 300); // 몹이 추구하는 속도
         this.movingSpeed = new Vector2(0, 5); // 몹이 맵에 도착하면 leastSpeed를 이것으로 바꿀것임
         this.onKnockBack = false;
-        this.position = new Vector2(position.x, position.y - 700);
+        this.position = new Vector2(position.x, position.y - wave * WAVE_DIST - WAVE_DEFAULT_DIST);
         this.arrivalPosY = position.y;
 
         this.prepareAtk = 1000;
@@ -1229,7 +1284,7 @@ function mobMaker(mob, data) {  // o core / n normal / b barrier / c cannon / m 
 class Mob_pawn extends Mob {
 
     constructor(game, position) {
-        super(game, position);
+        super(game, position, game.wave);
 
         this.data = [["O"]
             , ["c"]];
@@ -1248,7 +1303,7 @@ class Mob_pawn extends Mob {
 class Mob_knight extends Mob {
 
     constructor(game, position) {
-        super(game, position);
+        super(game, position, game.wave);
 
         this.data =
             [["c", "O", "c"]
@@ -1269,7 +1324,7 @@ class Mob_knight extends Mob {
 class Mob_bishop extends Mob {
 
     constructor(game, position) {
-        super(game, position);
+        super(game, position, game.wave);
 
         this.data =
             [["M", " ", "N", " ", "M"]
@@ -1291,7 +1346,7 @@ class Mob_bishop extends Mob {
 class Mob_rook extends Mob {
 
     constructor(game, position) {
-        super(game, position);
+        super(game, position, game.wave);
 
         this.data =
             [["N", "L", "N"]
@@ -1313,7 +1368,7 @@ class Mob_rook extends Mob {
 class Mob_qween extends Mob {
 
     constructor(game, position) {
-        super(game, position);
+        super(game, position, game.wave);
 
         this.data =  //11 * 28
             [[" ", " ", "B", "B", "B", "B", "B", "B", "B", " ", " "]
@@ -1358,7 +1413,7 @@ class Mob_qween extends Mob {
 class Mob_king extends Mob {
 
     constructor(game, position) {
-        super(game, position);
+        super(game, position, game.wave);
 
         this.data =
             [["O"]];

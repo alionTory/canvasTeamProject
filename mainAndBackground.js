@@ -105,6 +105,35 @@ $(function () {
     });
     function updateSkinPreview() {
         $('#skinPreview').attr('src', skins[currentSkinIndex]);
+        console.log(currentSkinIndex);
+        switch(currentSkinIndex) {
+            case 0:
+                img_player = new Image(); img_player.src = "imgFolder/player.png";
+                img_fireR = new Image(); img_fireR.src = "imgFolder/fireR.png";
+                img_fireR2 = new Image(); img_fireR2.src = "imgFolder/fireR2.png";
+                img_fireL = new Image(); img_fireL.src = "imgFolder/fireL.png";
+                img_fireL2 = new Image(); img_fireL2.src = "imgFolder/fireL2.png";
+                img_playerBall = new Image(); img_playerBall.src = "imgFolder/playerBall.png";
+                break;
+            case 1:
+                img_player = new Image(); img_player.src = "imgFolder/player2.png";
+                img_fireR = new Image(); img_fireR.src = "imgFolder/fireX.png";
+                img_fireR2 = new Image(); img_fireR2.src = "imgFolder/fireX.png";
+                img_fireL = new Image(); img_fireL.src = "imgFolder/fireX.png";
+                img_fireL2 = new Image(); img_fireL2.src = "imgFolder/fireX.png";
+                img_playerBall = new Image(); img_playerBall.src = "imgFolder/playerBall2.png";
+                break;
+            case 2:
+                img_player = new Image(); img_player.src = "imgFolder/player3.png";
+                img_fireR = new Image(); img_fireR.src = "imgFolder/fire2_1.png";
+                img_fireR2 = new Image(); img_fireR2.src = "imgFolder/fire2_2.png";
+                img_fireL = new Image(); img_fireL.src = "imgFolder/fire2_1.png";
+                img_fireL2 = new Image(); img_fireL2.src = "imgFolder/fire2_2.png";
+                img_playerBall = new Image(); img_playerBall.src = "imgFolder/playerBall3.png";
+                break;
+        }
+
+
     }
     $('#backFromSkin').click(function () {
         $('#skinSelector').hide();
