@@ -634,12 +634,12 @@ class Player extends ComponentObject {
         ctx.save();
         ctx.drawImage(img_player, this.position.x - 46.5, this.position.y - 10.5);
         if (this.game.previousTicks % 100 > 50) {
-            if (gameInput.left) { ctx.drawImage(img_fireL, this.position.x - 10.5 + 60, this.position.y - 7.5); }
-            if (gameInput.right) { ctx.drawImage(img_fireR, this.position.x - 10.5 - 60, this.position.y - 7.5); }
+            if (this.speed.x < 0) { ctx.drawImage(img_fireL, this.position.x - 10.5 + 60, this.position.y - 7.5); }
+            else if (this.speed.x > 0) { ctx.drawImage(img_fireR, this.position.x - 10.5 - 60, this.position.y - 7.5); }
         }
         else {
-            if (gameInput.left) { ctx.drawImage(img_fireL2, this.position.x - 10.5 + 60, this.position.y - 7.5); }
-            if (gameInput.right) { ctx.drawImage(img_fireR2, this.position.x - 10.5 - 60, this.position.y - 7.5); }
+            if (this.speed.x < 0) { ctx.drawImage(img_fireL2, this.position.x - 10.5 + 60, this.position.y - 7.5); }
+            else if (this.speed.x > 0) { ctx.drawImage(img_fireR2, this.position.x - 10.5 - 60, this.position.y - 7.5); }
         }
 
         if (this.isParrying) {
