@@ -90,6 +90,7 @@ let game = null;
 // jquery 공식 문서에서는 $(document).ready() 대신 $(function() {})을 사용하도록 권장함.
 $(function () {
     const gameCanvas = $("#game-canvas");
+    const infCanvas = $("#inf-canvas");
 
     cursorPosition = new Vector2(0, 0);
     $(document).on("mousemove", function (event) {
@@ -322,7 +323,7 @@ class Game {
                 break;
 
             default:
-                this.gameEnd();
+                this.gameEnd("win");
         }
     }
 
@@ -369,8 +370,19 @@ class Game {
         console.log("coin : " + (this.coin += toAddCoin) + "(+" + toAddCoin + ")");
     }
 
-    gameEnd() {
+    gameEnd(winLose) {
+        switch(winLose) {
+            case "win":
+                console.log("win");
+                break;
 
+            case "lose":
+                console.log("lose");
+                //tickFreeze
+                //playerCollapse
+                //return to mainMenu
+                break;
+        }
     }
 }
 
@@ -502,6 +514,7 @@ class Player extends ComponentObject {
 
     processParrying(delta) {
         if (this.leftTimeForNextParrying > 0)
+            //new Anime_rectAct(this.game, this, 0, 700);
             this.leftTimeForNextParrying -= delta;
 
         if (this.leftParryingPersistTime > 0)
@@ -542,6 +555,9 @@ class Player extends ComponentObject {
 
     playerHurt(dmg) {
         console.log("heart : " + (this.heart -= dmg) + "(-" + dmg + ")");
+        if (this.heart <= 0) {
+            this.game.gameEnd("lose");
+        }
     }
 
     draw(ctx) {
@@ -989,7 +1005,9 @@ class Box extends ComponentObject {
 
     }
 
-    doAttack() { }
+    doAttack() {
+
+    }
 }
 
 class NormalBox extends Box {
@@ -1096,6 +1114,7 @@ class CannonBox extends Box {
         if (this.game.previousTicks - this.createdTick > this.coolTime && this.position.y > 0) {
             this.createdTick = this.game.previousTicks + Math.random() * 500;
             new Cannon(this.game, this);
+            new Anime_rectAct(this.game, this, 0, 700);
         }
     }
 }
@@ -1119,6 +1138,7 @@ class MachinegunBox extends Box {
             new Bullet(this.game, this);
             new Bullet(this.game, this);
             new Bullet(this.game, this);
+            new Anime_rectAct(this.game, this, 0, 100);
         }
     }
 }
@@ -1140,6 +1160,7 @@ class LazerBox extends Box {
         if (this.game.previousTicks - this.createdTick > this.coolTime && this.position.y > 0) {
             this.createdTick = this.game.previousTicks + Math.random() * 500;
             new Lazer(this.game, this);
+            new Anime_rectAct(this.game, this, 0, 100);
         }
     }
 }
@@ -1473,9 +1494,11 @@ class Attacks extends ComponentObject {
         this.shape.position = Vector2.copy(this.position);
     }
 
-    processCollision(collisionInfo) {////////////////////////////////////////
+    processCollision(collisionInfo) {
+        new Anime_explode(this.game, this.radius * 5, 0.02, this);
         this.game.removeComponent(this);
         this.game.player.playerHurt(this.damage);
+
     }
 }
 
@@ -1546,16 +1569,16 @@ class Anime_background extends Anime {
 }
 
 class Anime_explode extends Anime {
-    box;
+    where;
 
-    constructor(game, size, spd, box) {
+    constructor(game, size, spd, where) {
         super(game);
         this.size = size;
         this.opacity = 1;
         this.spd = spd;
         this.drawOrder = 98;
-        this.box = box;
-        this.position = Vector2.copy(this.box.position);
+        this.where = where;
+        this.position = Vector2.copy(this.where.position);
 
         this.img = img_explode1;
     }
@@ -1610,5 +1633,48 @@ class Anime_boost extends Anime {
             ctx.drawImage(img_fireD2, this.box.position.x - 10.5, this.box.position.y - 50.5);
         }
         ctx.globalAlpha = 1;
+    }
+}
+
+class Anime_rectAct extends Anime {
+    comp;
+    gap;
+    startTick;
+    duration;
+    sizeScalar;
+
+    constructor(game, comp, gap, duration) {
+        super(game);
+        this.drawOrder = 1;
+        this.comp = comp;
+        this.startTick = game.previousTicks;
+        this.gap = gap;
+        this.duration = duration;
+        this.sizeScalar = 0.5;
+    }
+
+    update(delta) {
+        super.update(delta);
+        this.gap += this.sizeScalar;
+        if (this.startTick + this.duration < this.game.previousTicks) {
+            this.game.removeComponent(this);
+        }
+    }
+
+    draw(ctx) {
+        ctx.strokeStyle = 'red';
+        ctx.lineWidth = 3;
+        ctx.globalAlpha = 1 - (this.game.previousTicks - this.startTick) / this.duration;
+
+        ctx.beginPath();
+        ctx.moveTo(this.comp.position.x - (this.comp.width / 2 + this.gap), this.comp.position.y - (this.comp.height / 2 + this.gap));
+        ctx.lineTo(this.comp.position.x + (this.comp.width / 2 + this.gap), this.comp.position.y - (this.comp.height / 2 + this.gap));
+        ctx.lineTo(this.comp.position.x + (this.comp.width / 2 + this.gap), this.comp.position.y + (this.comp.height / 2 + this.gap));
+        ctx.lineTo(this.comp.position.x - (this.comp.width / 2 + this.gap), this.comp.position.y + (this.comp.height / 2 + this.gap));
+        ctx.lineTo(this.comp.position.x - (this.comp.width / 2 + this.gap), this.comp.position.y - (this.comp.height / 2 + this.gap));
+        ctx.stroke(); 
+
+        ctx.globalAlpha = 1;
+        ctx.lineWidth = 1;
     }
 }
