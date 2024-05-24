@@ -189,7 +189,7 @@ class Game {
         this.playerArrow = new PlayerLaunchAngleArrow(this, this.player, this.playerBall);
         new Anime_background(this);
 
-        let resume = new Button(this, new Vector2(GAME_WIDTH / 2, GAME_HEIGHT / 2 - 50), 130, 50, "pause");
+        let resume = new Button(this, new Vector2(GAME_WIDTH / 2, GAME_HEIGHT / 2 - 50), 130, 50, "resume");
         resume.setEventHandler(function () { this.game.state = "game"; });
         let toMainMenu = new Button(this, new Vector2(GAME_WIDTH / 2, GAME_HEIGHT / 2 + 50), 130, 50, "main menu");
         toMainMenu.setEventHandler(function () { this.game.startMainMenu(); });
