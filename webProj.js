@@ -499,6 +499,7 @@ class Player extends ComponentObject {
         this.fixCursorPosition();
 
         if (gameInput.click && this.leftTimeForNextParrying <= 0) {
+            new Anime_rectAct(this.game, this, 4, 700, "green");
             this.isParrying = true;
             this.leftTimeForNextParrying = this.parryingCoolTime;
             // 나누기 2하는 이유는, parringToleranceTime을 충돌 이벤트 전후로 나눠서 적용하기 위함.
@@ -513,9 +514,8 @@ class Player extends ComponentObject {
     }
 
     processParrying(delta) {
-        if (this.leftTimeForNextParrying > 0)
-            //new Anime_rectAct(this.game, this, 0, 700);
-            this.leftTimeForNextParrying -= delta;
+        if (this.leftTimeForNextParrying > 0) 
+            this.leftTimeForNextParrying -= delta;  
 
         if (this.leftParryingPersistTime > 0)
             this.leftParryingPersistTime -= delta;
@@ -573,12 +573,7 @@ class Player extends ComponentObject {
         }
 
         if (this.isParrying) {
-            ctx.beginPath();
-            ctx.moveTo(this.position.x - this.width / 2, this.position.y - this.height / 2 - 10);
-            ctx.lineTo(this.position.x + this.width / 2, this.position.y - this.height / 2 - 10);
-            ctx.lineWidth = 3;
-            ctx.strokeStyle = "blue";
-            ctx.stroke();
+            //
         }
 
         ctx.restore();
@@ -624,6 +619,7 @@ class PlayerBall extends ComponentObject {
         this.parryingCount = 0;
         this.parryingCheckTimeLeft = 0;
         this.brokenBlockCount = 0;
+        new Anime_circleAct(this.game, this, 0, 300, "green");
     }
 
     update(delta) {
@@ -1114,7 +1110,7 @@ class CannonBox extends Box {
         if (this.game.previousTicks - this.createdTick > this.coolTime && this.position.y > 0) {
             this.createdTick = this.game.previousTicks + Math.random() * 500;
             new Cannon(this.game, this);
-            new Anime_rectAct(this.game, this, 0, 700);
+            new Anime_rectAct(this.game, this, 0, 700, "red");
         }
     }
 }
@@ -1138,7 +1134,7 @@ class MachinegunBox extends Box {
             new Bullet(this.game, this);
             new Bullet(this.game, this);
             new Bullet(this.game, this);
-            new Anime_rectAct(this.game, this, 0, 100);
+            new Anime_rectAct(this.game, this, 0, 700, "red");
         }
     }
 }
@@ -1160,7 +1156,7 @@ class LazerBox extends Box {
         if (this.game.previousTicks - this.createdTick > this.coolTime && this.position.y > 0) {
             this.createdTick = this.game.previousTicks + Math.random() * 500;
             new Lazer(this.game, this);
-            new Anime_rectAct(this.game, this, 0, 100);
+            new Anime_rectAct(this.game, this, 0, 700, "red");
         }
     }
 }
@@ -1642,8 +1638,9 @@ class Anime_rectAct extends Anime {
     startTick;
     duration;
     sizeScalar;
+    color;
 
-    constructor(game, comp, gap, duration) {
+    constructor(game, comp, gap, duration, color) {
         super(game);
         this.drawOrder = 1;
         this.comp = comp;
@@ -1651,6 +1648,7 @@ class Anime_rectAct extends Anime {
         this.gap = gap;
         this.duration = duration;
         this.sizeScalar = 0.5;
+        this.color = color;
     }
 
     update(delta) {
@@ -1662,7 +1660,52 @@ class Anime_rectAct extends Anime {
     }
 
     draw(ctx) {
-        ctx.strokeStyle = 'red';
+        ctx.strokeStyle = this.color;
+        ctx.lineWidth = 3;
+        ctx.globalAlpha = 1 - (this.game.previousTicks - this.startTick) / this.duration;
+
+        ctx.beginPath();
+        ctx.moveTo(this.comp.position.x - (this.comp.width / 2 + this.gap), this.comp.position.y - (this.comp.height / 2 + this.gap));
+        ctx.lineTo(this.comp.position.x + (this.comp.width / 2 + this.gap), this.comp.position.y - (this.comp.height / 2 + this.gap));
+        ctx.lineTo(this.comp.position.x + (this.comp.width / 2 + this.gap), this.comp.position.y + (this.comp.height / 2 + this.gap));
+        ctx.lineTo(this.comp.position.x - (this.comp.width / 2 + this.gap), this.comp.position.y + (this.comp.height / 2 + this.gap));
+        ctx.lineTo(this.comp.position.x - (this.comp.width / 2 + this.gap), this.comp.position.y - (this.comp.height / 2 + this.gap));
+        ctx.stroke(); 
+
+        ctx.globalAlpha = 1;
+        ctx.lineWidth = 1;
+    }
+}
+
+class Anime_circleAct extends Anime {
+    comp;
+    gap;
+    startTick;
+    duration;
+    sizeScalar;
+    color;
+
+    constructor(game, comp, gap, duration, color) {
+        super(game);
+        this.drawOrder = 1;
+        this.comp = comp;
+        this.startTick = game.previousTicks;
+        this.gap = gap;
+        this.duration = duration;
+        this.sizeScalar = 0.5;
+        this.color = color;
+    }
+
+    update(delta) {
+        super.update(delta);
+        this.gap += this.sizeScalar;
+        if (this.startTick + this.duration < this.game.previousTicks) {
+            this.game.removeComponent(this);
+        }
+    }
+
+    draw(ctx) {
+        ctx.strokeStyle = this.color;
         ctx.lineWidth = 3;
         ctx.globalAlpha = 1 - (this.game.previousTicks - this.startTick) / this.duration;
 
