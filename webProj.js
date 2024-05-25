@@ -1,6 +1,6 @@
-// Game.processInput이 끝날 때 무조건 click이 false가 되므로 주의.
+// Game.processInput이 끝날 때 무조건 click, esc가 false가 되므로 주의.
 // 클릭 이벤트는 processInput이 끝나기 전에 처리되야 함.
-const gameInput = { left: false, right: false, click: false, space: false };
+const gameInput = { left: false, right: false, click: false, space: false, esc: false };
 let cursorPosition = null;
 let fixedCursorPosition = null;
 
@@ -122,6 +122,9 @@ $(document).on("keydown", function (event) {
     if (event.code == "Space") {
         gameInput.space = true;
     }
+    if (event.code == "Escape") {
+        gameInput.esc = true;
+    }
 });
 $(document).on("keyup", function (event) {
     if (event.code == "KeyA") {
@@ -132,6 +135,9 @@ $(document).on("keyup", function (event) {
     }
     if (event.code == "Space") {
         gameInput.space = false;
+    }
+    if (event.code == "Escape") {
+        gameInput.esc = false;
     }
 });
 
@@ -147,6 +153,7 @@ class Game {
     delta;
     previousTicks;
     components;  // drawOrder로 정렬된 Component 배열.
+    addList;  // 새로 생성할 Component들을 담는 배열
     removalList;  // 삭제할 Component들을 담는 배열
     collideablesWithBall;  // 플레이어의 공과 충돌 가능한 ComponentObject들
     player;
@@ -157,6 +164,8 @@ class Game {
     coin;
     mobList;
 
+    pauseScreenButtons;
+
     constructor(ctx) {
         this.level = STARTLEVEL; // 임시
         this.startMainMenu();
@@ -166,8 +175,10 @@ class Game {
         this.delta = 1 / this.fps;
         this.previousTicks = performance.now();
         this.components = [];
+        this.addList = [];
         this.removalList = [];
         this.collideablesWithBall = [];
+        this.pauseScreenButtons = [];
         this.loadComponents();
         //setInterval(this.runLoop.bind(this), this.delta * 1000);
         requestAnimationFrame(this.runLoop.bind(this));
@@ -180,12 +191,18 @@ class Game {
         this.playerBall = new PlayerBall(this, this.player);
         this.playerArrow = new PlayerLaunchAngleArrow(this, this.player, this.playerBall);
         new Anime_background(this);
-        //this.levelStarter(this.level);
+
+        let resume = new Button(this, new Vector2(GAME_WIDTH / 2, GAME_HEIGHT / 2 - 50), 130, 50, "resume");
+        resume.setEventHandler(function () { this.game.state = "game"; });
+        let toMainMenu = new Button(this, new Vector2(GAME_WIDTH / 2, GAME_HEIGHT / 2 + 50), 130, 50, "main menu");
+        toMainMenu.setEventHandler(function () { this.game.startMainMenu(); });
+
     }
 
     startMainMenu() {
         this.state = "main-menu";
         $("#game-section").hide();
+        $("#main-menu-section").show();
     }
 
     startGame(level) {
@@ -197,8 +214,19 @@ class Game {
     }
 
     processInput() {
-        this.player.processInput();
-        gameInput.click = false;
+        if (this.state == "game") {
+            this.player.processInput();
+            if (gameInput.esc)
+                this.state = "paused";
+        }
+        else if (this.state == "paused") {
+            for (let button of this.pauseScreenButtons) {
+                button.processInput();
+            }
+            if (gameInput.esc)
+                this.state = "game";
+        }
+        gameInput.click = gameInput.esc = false;
     }
     updateGame(timestamp) {
         this.delta = (timestamp - this.previousTicks) / 1000;
@@ -206,13 +234,16 @@ class Game {
             this.delta = 0.05;
         this.previousTicks = timestamp;
 
-        for (let component of this.components) {
-            component.update(this.delta);
+        this.doAdd();
+        if (this.state == "game") {
+            for (let component of this.components) {
+                component.update(this.delta);
+            }
+
+            this.tryWaveCall();
+
+            this.doRemoval();
         }
-
-        this.tryWaveCall();
-
-        this.doRemoval();
     }
     generateOutput() {
         this.ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
@@ -232,16 +263,26 @@ class Game {
 
     // components에 component를 정렬을 유지하며 추가
     addComponent(component) {
-        let insertionIndex = this.components.findIndex(function (element) {
-            if (component.getDrawOrder() <= element.getDrawOrder())
-                return true;
-            return false;
-        });
-        if (insertionIndex == -1) {
-            this.components.push(component);
-        } else {
-            this.components.splice(insertionIndex, 0, component);
+        this.addList.push(component);
+    }
+
+    // drawOrder가 Component의 자식 생성자에서 수정되었을 수 있으므로,
+    // 수정 이후의 drawOrder 값을 반영할 수 있도록
+    // components에 바로 추가하지 않고, addList에 추가한 뒤 doAdd()에서 components에 추가.
+    doAdd() {
+        for (let component of this.addList) {
+            let insertionIndex = this.components.findIndex(function (element) {
+                if (component.getDrawOrder() <= element.getDrawOrder())
+                    return true;
+                return false;
+            });
+            if (insertionIndex == -1) {
+                this.components.push(component);
+            } else {
+                this.components.splice(insertionIndex, 0, component);
+            }
         }
+        this.addList = [];
     }
 
     // 실제로는 removalList에 component를 추가하는 역할
@@ -277,14 +318,15 @@ class Game {
 
         //적공격들 초기화
         for (let comp of this.components) {
-            if (!(comp instanceof Player) && !(comp instanceof PlayerBall)
-                && !(comp instanceof PlayerLaunchAngleArrow) && !(comp instanceof Anime_background))
+            if (comp instanceof Box || comp instanceof Mob || comp instanceof Attacks)
                 this.removeComponent(comp);
         }
+        this.doRemoval();
     }
 
     levelStarter(level) { // 코어가 부서질 때 레벨을 올릴지 판단할 것.
         this.initGame();
+        console.log(this.components);
 
         switch (level) {
             case 1:
@@ -361,7 +403,7 @@ class Game {
             //레벨 업! 표시
 
             this.level++;
-            setTimeout(function() {this.levelStarter(this.level)}.bind(this), 2000);    
+            setTimeout(function () { this.levelStarter(this.level) }.bind(this), 2000);
 
         }
     }
@@ -392,7 +434,7 @@ class Component {
     drawOrder;
     constructor(game) {
         this.game = game;
-        this.drawOrder = 100;
+        this.drawOrder = 50;
         this.position = new Vector2(0, 0);
         game.addComponent(this);
     }
@@ -454,6 +496,66 @@ class ComponentObject extends Component {
     }
 }
 
+class Button extends Component {
+    width;
+    height;
+    text;
+    hover;
+    eventHandler;
+
+    constructor(game, position, width, height, text) {
+        super(game, 101);
+        this.game.pauseScreenButtons.push(this);
+        this.position.copyFrom(position);
+        this.drawOrder = 101;
+        this.width = width;
+        this.height = height;
+        this.text = text;
+        this.hover = false;
+        this.eventHandler = null;
+    }
+
+    setEventHandler(eventHandler) {
+        this.eventHandler = eventHandler;
+    }
+
+    processInput() {
+        if (this.game.state != "paused")
+            return;
+
+        if (this.position.x - this.width / 2 <= cursorPosition.x && cursorPosition.x <= this.position.x + this.width / 2
+            && this.position.y - this.height / 2 <= cursorPosition.y && cursorPosition.y <= this.position.y + this.height / 2)
+            this.hover = true;
+        else
+            this.hover = false;
+
+        if (gameInput.click && this.hover) {
+            this.eventHandler();
+        }
+    }
+
+    draw(ctx) {
+        if (this.game.state != "paused")
+            return;
+
+        ctx.save();
+
+        if (this.hover)
+            ctx.fillStyle = "red";
+        else
+            ctx.fillStyle = "blue";
+        ctx.fillRect(this.position.x - this.width / 2, this.position.y - this.height / 2, this.width, this.height);
+
+        ctx.fillStyle = "black";
+        ctx.font = "20px Silkscreen";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(this.text, this.position.x, this.position.y, this.width);
+
+        ctx.restore();
+    }
+}
+
 
 class Player extends ComponentObject {
     width;
@@ -469,6 +571,7 @@ class Player extends ComponentObject {
     leftParryingPersistTime;
     constructor(game) {
         super(game);
+        this.drawOrder = 90;
         this.width = 81;
         this.height = 9;
         this.maxSpeed = PLAYER_SPD;
@@ -564,12 +667,12 @@ class Player extends ComponentObject {
         ctx.save();
         ctx.drawImage(img_player, this.position.x - 46.5, this.position.y - 10.5);
         if (this.game.previousTicks % 100 > 50) {
-            if (gameInput.left) { ctx.drawImage(img_fireL, this.position.x - 10.5 + 60, this.position.y - 7.5); }
-            if (gameInput.right) { ctx.drawImage(img_fireR, this.position.x - 10.5 - 60, this.position.y - 7.5); }
+            if (this.speed.x < 0) { ctx.drawImage(img_fireL, this.position.x - 10.5 + 60, this.position.y - 7.5); }
+            else if (this.speed.x > 0) { ctx.drawImage(img_fireR, this.position.x - 10.5 - 60, this.position.y - 7.5); }
         }
         else {
-            if (gameInput.left) { ctx.drawImage(img_fireL2, this.position.x - 10.5 + 60, this.position.y - 7.5); }
-            if (gameInput.right) { ctx.drawImage(img_fireR2, this.position.x - 10.5 - 60, this.position.y - 7.5); }
+            if (this.speed.x < 0) { ctx.drawImage(img_fireL2, this.position.x - 10.5 + 60, this.position.y - 7.5); }
+            else if (this.speed.x > 0) { ctx.drawImage(img_fireR2, this.position.x - 10.5 - 60, this.position.y - 7.5); }
         }
 
         if (this.isParrying) {
@@ -600,6 +703,7 @@ class PlayerBall extends ComponentObject {
     constructor(game, player) {
         super(game);
         this.player = player;
+        this.drawOrder = 91;
         this.radius = 10;
         this.explosionRadius = BALL_EXPLOTION_RAD;
         this.generatingDelay = 2;
@@ -874,6 +978,7 @@ class PlayerLaunchAngleArrow extends Component {
     ball;
     constructor(game, player, ball) {
         super(game);
+        this.drawOrder = 92;
         this.length = 100;
         this.player = player;
         this.ball = ball;
@@ -1067,7 +1172,7 @@ class BarrierBox extends Box {
     constructor(game, position, owner, boost) {
         super(game, position, 30, 30, owner, boost);
         this.price = BOX_PRICE_BARRIER;
-        this.drawOrder = 49; // 다른 box들은 50
+        this.drawOrder = 51; // 다른 box들은 50
         this.barrierState = "unbroken";
     }
 
@@ -1472,7 +1577,7 @@ class Attacks extends ComponentObject {
 
         this.shape = new ShapeCircle(this, this.position, this.radius);
 
-        this.drawOrder = 30;
+        this.drawOrder = 40;
     }
 
     update(delta) {
@@ -1556,7 +1661,7 @@ class Anime_background extends Anime {
         super(game);
         this.img = img_background1;
         this.spd = 0.01;
-        this.drawOrder = 99;
+        this.drawOrder = 1;
     }
 
     draw(ctx) {
@@ -1572,7 +1677,7 @@ class Anime_explode extends Anime {
         this.size = size;
         this.opacity = 1;
         this.spd = spd;
-        this.drawOrder = 98;
+        this.drawOrder = 5;
         this.where = where;
         this.position = Vector2.copy(this.where.position);
 
@@ -1607,7 +1712,7 @@ class Anime_boost extends Anime {
     box;
     constructor(game, box) {
         super(game);
-        this.drawOrder = 97;
+        this.drawOrder = 3;
         this.box = box;
         this.spd = 160;
         this.opacity = 0.35;
