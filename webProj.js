@@ -46,8 +46,8 @@ BALL_SPD_2 = 500;
 BALL_SPD_3 = 600;
 BALL_EXPLOTION_RAD = 29;
 
-WAVE_DEFAULT_DIST = 500;
-WAVE_DIST = 5000;
+WAVE_DEFAULT_DIST = 300;
+WAVE_DIST = 1000;
 
 // .......................................................................................................................
 
@@ -184,6 +184,8 @@ class Game {
         requestAnimationFrame(this.runLoop.bind(this));
 
         this.coin = 0;
+
+        new NextWaveInfo(this);
     }
 
     loadComponents() {
@@ -329,19 +331,20 @@ class Game {
         console.log(this.components);
 
         switch (level) {
+            // wave * WAVE_DISTANCE가 다음 웨이브 몬스터의 요구 이동 거리
             case 1:
-                this.wave = 0;
+                this.wave = 0; 
                 this.mobList.push(new Mob_pawn(this, new Vector2(100, 200)));
                 this.mobList.push(new Mob_pawn(this, new Vector2(250, 200)));
                 this.mobList.push(new Mob_pawn(this, new Vector2(400, 200)));
                 this.mobList.push(new Mob_knight(this, new Vector2(250, 80)));
 
-                this.wave = 1;
+                this.wave = 6;
                 this.mobList.push(new Mob_knight(this, new Vector2(250, 80)));
                 this.mobList.push(new Mob_knight(this, new Vector2(150, 180)));
                 this.mobList.push(new Mob_knight(this, new Vector2(350, 180)));
 
-                this.wave = 2;
+                this.wave = 12;
                 this.mobList.push(new Mob_pawn(this, new Vector2(50, 100)));
                 this.mobList.push(new Mob_pawn(this, new Vector2(50, 200)));
                 this.mobList.push(new Mob_pawn(this, new Vector2(450, 100)));
@@ -361,7 +364,7 @@ class Game {
 
             case 3:
                 this.wave = 0;
-                this.mobList.push(new Mob_qween(this, new Vector2(250, -600)));
+                this.mobList.push(new Mob_qween(this, new Vector2(250, -650)));
                 break;
 
             default:
@@ -381,7 +384,7 @@ class Game {
     tryWaveCall() {
         if (gameInput.space) {
             for (let mob of this.mobList) {
-                if (mob.position.y > 0)
+                if (mob.frontestBox.position.y > -WAVE_DEFAULT_DIST)
                     return;
             }
 
@@ -389,9 +392,9 @@ class Game {
             if (frontest != null) {
                 for (let mob of this.mobList) {
                     if (mob != frontest)
-                        mob.position.y -= frontest.position.y + 100;
+                        mob.position.y -= frontest.position.y + WAVE_DEFAULT_DIST;
                 }
-                frontest.position.y -= frontest.position.y + 100;
+                frontest.position.y -= frontest.position.y + WAVE_DEFAULT_DIST;
             }
         }
     }
@@ -1033,7 +1036,8 @@ class Box extends ComponentObject {
         this.shape = new ShapeAABB(this.owner, new Vector2(), new Vector2());
         this.updateShape();
         this.drawOrder = 50;
-        this.createdTick = this.game.previousTicks;
+        //createdTick은 오로지 doAttack에서만 쓸것...
+        this.createdTick = this.game.previousTicks + Math.random() * 500;
 
         this.bonusCoin = 20;
         this.explodeSize = 60;
@@ -1276,10 +1280,9 @@ class Mob extends ComponentObject {
     movingSpeed;
     data;
     onKnockBack;  // 강화된 공의 폭발 공격으로 인해, 한 프레임에 넉백을 중복해서 받는 것을 방지하기 위함.
-
     arrivalPosY; // 몹이 생성되고 지정된 위치에 도착한다면 느려짐.
-
     prepareAtk;
+    frontestBox;
 
     constructor(game, position, wave) {
         super(game);
@@ -1368,7 +1371,7 @@ function mobMaker(mob, data) {  // o core / n normal / b barrier / c cannon / m 
     // 대문자 -> 박스 뒤에 불 나옴
     let coreIdx;
 
-    //코어의 위치를 찾음.
+    //코어의 위치를 찾음 + 가장 앞의 박스 찾음
     for (let i = 0; i < data.length; i++) {
         for (let j = 0; j < data[i].length; j++) {
             if (data[i][j] == "O" || data[i][j] == "o") {
@@ -1402,6 +1405,17 @@ function mobMaker(mob, data) {  // o core / n normal / b barrier / c cannon / m 
             }
         }
     }
+
+    //가장 앞의 박스 찾음
+    let frontestBox = mob.boxList[0];
+
+    for (let i = 0; i < mob.boxList.length; i++) {
+        if (frontestBox.position.y < mob.boxList[i].position.y) {
+            frontestBox = mob.boxList[i];
+        }
+    }
+
+    mob.frontestBox = frontestBox;
 }
 
 class Mob_pawn extends Mob {
@@ -1501,9 +1515,9 @@ class Mob_qween extends Mob {
                 , ["b", " ", "n", "m", "n", "n", "n", "m", "n", " ", "b"]
                 , ["b", " ", "n", "n", "c", "n", "c", "n", "n", " ", "b"]
                 , ["b", "l", "n", "n", "n", "o", "n", "n", "n", "l", "b"]
-                , ["b", " ", "n", "n", "c", "n", "c", "n", "n", " ", "b"]
-                , ["b", " ", "n", "m", "n", "n", "n", "m", "n", " ", "b"]
-                , ["b", " ", "n", "n", "n", "n", "n", "n", "n", " ", "b"]
+                , ["b", " ", "n", "n", "c", "b", "c", "n", "n", " ", "b"]
+                , ["b", " ", "b", "m", "n", "b", "n", "m", "b", " ", "b"]
+                , ["b", " ", "b", "b", "b", "b", "b", "b", "b", " ", "b"]
                 , ["b", " ", " ", " ", " ", " ", " ", " ", " ", " ", "b"]
                 , ["b", "l", "c", "n", "n", " ", "n", "n", "c", "l", "b"]
                 , ["b", " ", " ", " ", " ", " ", " ", " ", " ", " ", "b"]
@@ -1578,7 +1592,7 @@ class Attacks extends ComponentObject {
 
         this.shape = new ShapeCircle(this, this.position, this.radius);
 
-        this.drawOrder = 40;
+        this.drawOrder = 55;
     }
 
     update(delta) {
@@ -1641,6 +1655,36 @@ class Lazer extends Attacks {
     }
     draw(ctx) {
         this.game.ctx.drawImage(img_lazer, this.position.x - this.radius, this.position.y - this.radius, this.radius * 2, this.radius * 2);
+    }
+}
+
+class NextWaveInfo extends ComponentObject{
+    frontestMob;
+
+    constructor(game) {
+        super(game);
+        this.drawOrder = 40;
+    }
+
+    update(delta) {
+        this.frontestMob = this.game.getMostFrontMob();
+        super.update(delta);
+    }
+
+    draw(ctx) {
+        if (this.frontestMob == null) return;
+        if (this.frontestMob.frontestBox.position.y >= -(2 + WAVE_DEFAULT_DIST)) return;
+        
+        let dist = -(WAVE_DEFAULT_DIST + this.frontestMob.frontestBox.position.y);
+        let leftTime = dist / this.frontestMob.leastSpeed.y;
+
+        let msg = 'press \'SPACE\' to call next Wave ( nextWave : ' + leftTime.toFixed(1) + "s )";
+
+        ctx.font = '20px Arial';
+        ctx.fillStyle = 'white';
+        ctx.textAlign = 'center';
+
+        ctx.fillText(msg, GAME_WIDTH / 2, 30);
     }
 }
 
