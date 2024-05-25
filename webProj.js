@@ -723,7 +723,6 @@ class PlayerBall extends ComponentObject {
         this.parryingCount = 0;
         this.parryingCheckTimeLeft = 0;
         this.brokenBlockCount = 0;
-        new Anime_circleAct(this.game, this, 0, 300, "green");
     }
 
     update(delta) {
@@ -918,17 +917,19 @@ class PlayerBall extends ComponentObject {
         ctx.globalAlpha = 1;
 
         if (this.state == "reinforcing") {
-            ctx.beginPath();
-            ctx.lineWidth = 3;
-            ctx.arc(this.position.x, this.position.y, this.radius + 5, 0, Math.PI * 2);
-            ctx.strokeStyle = "yellow";
-            ctx.stroke();
+            // ctx.beginPath();
+            // ctx.lineWidth = 3;
+            // ctx.arc(this.position.x, this.position.y, this.radius + 5, 0, Math.PI * 2);
+            // ctx.strokeStyle = "yellow";
+            // ctx.stroke();
+            if (this.game.previousTicks % 400 < 20) new Anime_circleAct(this.game, this, 0, this.explosionRadius * 20, "green");
         } else if (this.state == "reinforced") {
-            ctx.beginPath();
-            ctx.lineWidth = 3;
-            ctx.arc(this.position.x, this.position.y, this.radius + 5, 0, Math.PI * 2);
-            ctx.strokeStyle = "red";
-            ctx.stroke();
+            // ctx.beginPath();
+            // ctx.lineWidth = 3;
+            // ctx.arc(this.position.x, this.position.y, this.radius + 5, 0, Math.PI * 2);
+            // ctx.strokeStyle = "red";
+            // ctx.stroke();
+            if (this.game.previousTicks % 100 < 20) new Anime_circleAct(this.game, this, 0, this.explosionRadius * 20, "green");
         }
         ctx.restore();
     }
@@ -1677,7 +1678,7 @@ class Anime_explode extends Anime {
         this.size = size;
         this.opacity = 1;
         this.spd = spd;
-        this.drawOrder = 5;
+        this.drawOrder = 80;
         this.where = where;
         this.position = Vector2.copy(this.where.position);
 
@@ -1747,7 +1748,7 @@ class Anime_rectAct extends Anime {
 
     constructor(game, comp, gap, duration, color) {
         super(game);
-        this.drawOrder = 1;
+        this.drawOrder = 70;
         this.comp = comp;
         this.startTick = game.previousTicks;
         this.gap = gap;
@@ -1792,12 +1793,12 @@ class Anime_circleAct extends Anime {
 
     constructor(game, comp, gap, duration, color) {
         super(game);
-        this.drawOrder = 1;
+        this.drawOrder = 70;
         this.comp = comp;
         this.startTick = game.previousTicks;
         this.gap = gap;
         this.duration = duration;
-        this.sizeScalar = 0.5;
+        this.sizeScalar = 0.9;
         this.color = color;
     }
 
@@ -1815,12 +1816,8 @@ class Anime_circleAct extends Anime {
         ctx.globalAlpha = 1 - (this.game.previousTicks - this.startTick) / this.duration;
 
         ctx.beginPath();
-        ctx.moveTo(this.comp.position.x - (this.comp.width / 2 + this.gap), this.comp.position.y - (this.comp.height / 2 + this.gap));
-        ctx.lineTo(this.comp.position.x + (this.comp.width / 2 + this.gap), this.comp.position.y - (this.comp.height / 2 + this.gap));
-        ctx.lineTo(this.comp.position.x + (this.comp.width / 2 + this.gap), this.comp.position.y + (this.comp.height / 2 + this.gap));
-        ctx.lineTo(this.comp.position.x - (this.comp.width / 2 + this.gap), this.comp.position.y + (this.comp.height / 2 + this.gap));
-        ctx.lineTo(this.comp.position.x - (this.comp.width / 2 + this.gap), this.comp.position.y - (this.comp.height / 2 + this.gap));
-        ctx.stroke(); 
+        ctx.arc(this.comp.position.x, this.comp.position.y, this.comp.radius + this.gap, 0, Math.PI * 2, false);
+        ctx.stroke();
 
         ctx.globalAlpha = 1;
         ctx.lineWidth = 1;
