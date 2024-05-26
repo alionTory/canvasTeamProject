@@ -1575,6 +1575,7 @@ class Attacks extends ComponentObject {
     damage;
     angleError;
     err;
+    isParried;
 
     constructor(game, box, radius, spdScalar, damage, err) {
         super(game);
@@ -1586,6 +1587,7 @@ class Attacks extends ComponentObject {
         this.position = Vector2.copy(this.box.position);
         this.err = err;
         this.angleError = Math.random() * this.err - 0.5 * err;
+        this.isParried = false;
 
         this.newSpeed = new Vector2((this.player.position.x - this.box.position.x + this.angleError), (this.player.position.y - this.box.position.y)).nomalize();
         this.speed = this.newSpeed.multiply(this.spdScalar);
@@ -1613,14 +1615,25 @@ class Attacks extends ComponentObject {
     }
 
     processCollision(collisionInfo) {
-        if (collisionInfo.component instanceof Player && !this.game.player.isHiding) {
-            new Anime_explode(this.game, this.radius * 5, 0.02, this);
-            this.game.removeComponent(this);
-            this.game.player.playerHurt(this.damage);
-        } else if (collisionInfo.component instanceof PlayerBall) {
-            new Anime_explode(this.game, this.radius * 5, 0.02, this);
-            this.game.removeComponent(this);
+        if (!this.isParried) {
+            if (collisionInfo.component instanceof Player) {
+                if (this.game.player.isParrying)
+                    this.parriedByPlayer();
+                else if (!this.game.player.isHiding) {
+                    new Anime_explode(this.game, this.radius * 5, 0.02, this);
+                    this.game.removeComponent(this);
+                    this.game.player.playerHurt(this.damage);
+                }
+            } else if (collisionInfo.component instanceof PlayerBall) {
+                new Anime_explode(this.game, this.radius * 5, 0.02, this);
+                this.game.removeComponent(this);
+            }
         }
+    }
+
+    parriedByPlayer() {
+        this.isParried = true;
+        this.speed.y *= -1;
     }
 }
 
