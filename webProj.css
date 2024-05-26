@@ -6,6 +6,8 @@
 #align-game-and-shop{
     display: flex;;
     justify-content: center;
+    position : relative;
+    z-index: 999;
 }
 
 #game-canvas{

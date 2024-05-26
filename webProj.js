@@ -18,6 +18,7 @@ BOX_PRICE_CANNON = 50;
 BOX_PRICE_MACHINEGUN = 60;
 BOX_PRICE_LAZER = 90;
 BOX_PRICE_CORE = 150;
+WAVE_CALL_BONUS = 100;
 
 CANNON_COOL = 2000;
 CANNON_ERR = 30;
@@ -164,7 +165,10 @@ class Game {
 
     wave;
     coin;
+    score;
     mobList;
+
+    nextWaveInfo;
 
     pauseScreenButtons;
 
@@ -186,8 +190,9 @@ class Game {
         requestAnimationFrame(this.runLoop.bind(this));
 
         this.coin = 0;
+        this.score = 0;
 
-        new NextWaveInfo(this);
+        this.nextWaveInfo = new NextWaveInfo(this);
     }
 
     loadComponents() {
@@ -417,6 +422,7 @@ class Game {
                         mob.position.y -= frontest.position.y + WAVE_DEFAULT_DIST;
                 }
                 frontest.position.y -= frontest.position.y + WAVE_DEFAULT_DIST;
+                this.addScore(WAVE_CALL_BONUS * Math.floor(this.nextWaveInfo.leftTime));
             }
         }
     }
@@ -425,17 +431,9 @@ class Game {
         if (this.mobList.length == 0) {
             //레벨 클리어
             if(this.level == MAX_LEVEL){
-                this.clearTextActive=true;
-
-                //적공격들 초기화
-                this.atkClear();
                 this.gameEnd("win");
-
-                setTimeout(()=>{
-                    this.clearTextActive=false;
-                },5000);
             }else {
-            //레벨 클리어
+            //레벨 업
             console.log("lvup");
 
             this.level++;
@@ -451,19 +449,36 @@ class Game {
 
     addCoin(toAddCoin) {
         console.log("coin : " + (this.coin += toAddCoin) + "(+" + toAddCoin + ")");
+        this.addScore(toAddCoin);
+    }
+
+    addScore(toAddScore) {
+        console.log("score : " + (this.score += 10*toAddScore) + "(+" + 10*toAddScore + ")");
     }
 
     gameEnd(winLose) {
         switch (winLose) {
             case "win":
                 console.log("win");
+                this.clearTextActive=true;
+                this.atkClear();
+
+                setTimeout(()=>{
+                    this.clearTextActive=false;
+                },5000);
                 break;
 
             case "lose":
                 console.log("lose");
-                //tickFreeze
-                //playerCollapse
-                //return to mainMenu
+                new Anime_BrokenPlayer(this, this.player);
+                this.removeComponent(this.playerBall);
+                this.removeComponent(this.PlayerLaunchAngleArrow);
+  
+                Box.attackAble = false;
+                for (let mob of this.mobList) {
+                    mob.leastSpeed = new Vector2(0, 100);
+                }
+
                 break;
         }
     }
@@ -473,11 +488,13 @@ class Component {
     game;
     position;
     drawOrder;
+    tmpTick;
     constructor(game) {
         this.game = game;
         this.drawOrder = 50;
         this.position = new Vector2(0, 0);
         game.addComponent(this);
+        this.tmpTick = this.game.previousTicks;
     }
     update(delta) {
     }
@@ -610,7 +627,9 @@ class Player extends ComponentObject {
     isParrying;
     parryingToleranceTime;  // 충돌 이벤트 전후로 parringToleranceTime / 2 초 동안은 패링으로 쳐줌
     leftParryingPersistTime;
-    isHiding  // 은신 스킬이 활성화 되어있는지
+    isHiding;  // 은신 스킬이 활성화 되어있는지
+    shieldCount;
+    shield;
     constructor(game) {
         super(game);
         this.drawOrder = 90;
@@ -621,6 +640,9 @@ class Player extends ComponentObject {
         this.radianLimit = Math.PI / 6;
         this.heart = PLAYER_HEART;
         this.isHiding = false;
+        this.shieldCount = 3;
+
+        this.shield = new PlayerShield(this.game, this);
 
         // 공 패링 관련
         this.parryingCoolTime = 0.5;
@@ -657,6 +679,11 @@ class Player extends ComponentObject {
     update(delta) {
         this.processParrying(delta);
         super.update(delta);
+    }
+
+    processShield() {
+        new Anime_rectAct(this.game, this, 4, 500, "lightBlue");
+        this.shieldCount--;
     }
 
     processParrying(delta) {
@@ -708,6 +735,8 @@ class Player extends ComponentObject {
 
     draw(ctx) {
         ctx.save();
+        if (this.isHiding) ctx.globalAlpha = 0.5;
+
         ctx.drawImage(img_player, this.position.x - 46.5, this.position.y - 10.5);
         if (this.game.previousTicks % 100 > 50) {
             if (this.speed.x < 0) { ctx.drawImage(img_fireL, this.position.x - 10.5 + 60, this.position.y - 7.5); }
@@ -723,6 +752,65 @@ class Player extends ComponentObject {
         }
 
         ctx.restore();
+
+        ctx.globalAlpha = 1;
+    }
+}
+
+class PlayerShield extends ComponentObject {
+    player;
+    shieldCount;
+    theta;
+    theta2;
+    theta3;
+    orbitRad;
+    radius;
+    constructor(game, player) {
+        super(game);
+        this.player = player;
+        this.theta = 0
+        this.orbitRad = 5;
+        this.radius = 2;
+        this.drawOrder = 99;
+    }
+
+    update(delta) {
+        this.position = Vector2.plus(this.player.position, new Vector2(40, -20));
+        this.shieldCount = this.player.shieldCount;
+
+        super.update(delta);
+        this.theta += 6*Math.PI/180;
+
+        if (this.theta == Math.PI*2) this.theta = 0;
+
+        this.theta2 = this.theta + 120*Math.PI/180;
+        this.theta3 = this.theta + 240*Math.PI/180;
+    }
+
+    draw(ctx) {
+        ctx.strokeStyle = "lightBlue";
+        ctx.fillStyle = 'lightBlue';
+
+        switch(this.shieldCount) {
+            case 3:
+                ctx.beginPath();
+                ctx.arc(this.position.x + Math.sin(this.theta)*this.orbitRad, this.position.y + Math.cos(this.theta)*this.orbitRad, this.radius, 0, Math.PI * 2, false);
+                ctx.stroke();
+                ctx.fill();
+            case 2:
+                ctx.beginPath();
+                ctx.arc(this.position.x + Math.sin(this.theta2)*this.orbitRad, this.position.y + Math.cos(this.theta2)*this.orbitRad, this.radius, 0, Math.PI * 2, false);
+                ctx.stroke();
+                ctx.fill();
+            case 1:
+                ctx.beginPath();
+                ctx.arc(this.position.x + Math.sin(this.theta3)*this.orbitRad, this.position.y + Math.cos(this.theta3)*this.orbitRad, this.radius, 0, Math.PI * 2, false);
+                ctx.stroke();
+                ctx.fill();
+            case 0:
+                break;
+
+        }
     }
 }
 
@@ -965,14 +1053,20 @@ class PlayerBall extends ComponentObject {
             // ctx.arc(this.position.x, this.position.y, this.radius + 5, 0, Math.PI * 2);
             // ctx.strokeStyle = "yellow";
             // ctx.stroke();
-            if (this.game.previousTicks % 400 < 20) new Anime_circleAct(this.game, this, 0, this.explosionRadius * 20, "green");
+            if (this.game.previousTicks > this.tmpTick + 200) {
+                new Anime_circleAct(this.game, this, 0, this.explosionRadius * 20, "green");
+                this.tmpTick = this.game.previousTicks;
+            }
         } else if (this.state == "reinforced") {
             // ctx.beginPath();
             // ctx.lineWidth = 3;
             // ctx.arc(this.position.x, this.position.y, this.radius + 5, 0, Math.PI * 2);
             // ctx.strokeStyle = "red";
             // ctx.stroke();
-            if (this.game.previousTicks % 100 < 20) new Anime_circleAct(this.game, this, 0, this.explosionRadius * 20, "green");
+            if (this.game.previousTicks > this.tmpTick + 100) {
+                new Anime_circleAct(this.game, this, 0, this.explosionRadius * 20, "green");
+                this.tmpTick = this.game.previousTicks;
+            }
         }
         ctx.restore();
     }
@@ -1051,6 +1145,7 @@ class PlayerLaunchAngleArrow extends Component {
 // 박스 관련
 
 class Box extends ComponentObject {
+    static attackAble = true;
     relativePosition;
     width;
     height;
@@ -1064,6 +1159,7 @@ class Box extends ComponentObject {
 
     constructor(game, relativePosition, width, height, owner = null, boost) {
         super(game);
+
         this.relativePosition = relativePosition;
         this.position = Vector2.plus(owner.position, relativePosition);
         this.width = width;
@@ -1094,7 +1190,8 @@ class Box extends ComponentObject {
         //this.speed = Vector2.copy(this.owner.speed);
         this.position = Vector2.plus(this.owner.position, this.relativePosition);
         super.update(delta);
-        this.doAttack();
+        if (Box.attackAble)
+            this.doAttack();
     }
 
     checkWallCollision() {
@@ -1136,7 +1233,7 @@ class Box extends ComponentObject {
         }
 
         //애니메이션
-        new Anime_explode(this.game, this.explodeSize, 0.02, this);
+        new Anime_explode(this.game, this.explodeSize, 0.02, this, 0, 0);
 
         this.destroyed = true;
     }
@@ -1323,6 +1420,7 @@ class Mob extends ComponentObject {
     arrivalPosY; // 몹이 생성되고 지정된 위치에 도착한다면 느려짐.
     prepareAtk;
     frontestBox;
+    arrived;
 
     constructor(game, position, wave) {
         super(game);
@@ -1335,6 +1433,7 @@ class Mob extends ComponentObject {
         this.prepareAtk = 1000;
 
         this.drawOrder = 40;
+        this.arrived = false;
     }
 
     processCollision(collisionInfo) {
@@ -1362,8 +1461,9 @@ class Mob extends ComponentObject {
 
     isArrived() {
         // 맵 내부로 도착했는가
-        if (this.position.y >= this.arrivalPosY) {
+        if (this.position.y >= this.arrivalPosY && !this.arrived) {
             this.leastSpeed = this.movingSpeed;
+            this.arrived = true;
         }
 
         // 맵 끝으로 가버렸는가
@@ -1371,12 +1471,18 @@ class Mob extends ComponentObject {
             this.leastSpeed = new Vector2(0, 100);
         }
 
-        // 충분히 멀리 갔다면 폭발! (코어를 부숨)
+        // 충분히 멀리 갔다면 순수 제거
         if (this.position.y > GAME_HEIGHT + 1000) {
-            for (let box of this.boxList) {
-                if (box instanceof CoreBox) box.destroyBox(box);
-            }
+            this.removeMobHard();
         }
+    }
+
+    removeMobHard() {
+        for (let box of this.boxList) {
+            this.game.removeComponent(box);
+        }
+        this.game.removeComponent(this);
+        this.game.doRemoval();
     }
 
     updateSpeed(delta) {
@@ -1652,9 +1758,16 @@ class Attacks extends ComponentObject {
 
     processCollision(collisionInfo) {
         if (collisionInfo.component instanceof Player && !this.game.player.isHiding) {
-            new Anime_explode(this.game, this.radius * 5, 0.02, this);
+
+            if (this.player.shieldCount > 0) {
+                this.player.processShield();
+            } else {
+                new Anime_explode(this.game, this.radius * 5, 0.02, this, 0, 0);
+                this.game.player.playerHurt(this.damage);
+            }
             this.game.removeComponent(this);
-            this.game.player.playerHurt(this.damage);
+
+
         }
     }
 }
@@ -1701,10 +1814,12 @@ class Lazer extends Attacks {
 
 class NextWaveInfo extends ComponentObject {
     frontestMob;
+    leftTime;
 
     constructor(game) {
         super(game);
         this.drawOrder = 40;
+        this.leftTime = 0;
     }
 
     update(delta) {
@@ -1717,9 +1832,9 @@ class NextWaveInfo extends ComponentObject {
         if (this.frontestMob.frontestBox.position.y >= -(2 + WAVE_DEFAULT_DIST)) return;
 
         let dist = -(WAVE_DEFAULT_DIST + this.frontestMob.frontestBox.position.y);
-        let leftTime = dist / this.frontestMob.leastSpeed.y;
+        this.leftTime = dist / this.frontestMob.leastSpeed.y;
 
-        let msg = 'press \'SPACE\' to call next Wave ( nextWave : ' + leftTime.toFixed(1) + "s )";
+        let msg = 'press \'SPACE\' to call next Wave ( nextWave : ' + this.leftTime.toFixed(1) + "s )";
 
         ctx.font = '20px Arial';
         ctx.fillStyle = 'white';
@@ -1757,16 +1872,20 @@ class Anime_background extends Anime {
 
 class Anime_explode extends Anime {
     where;
-
-    constructor(game, size, spd, where) {
+    errX;
+    errY;
+    
+    constructor(game, size, spd, where, errX, errY) {
         super(game);
         this.size = size;
         this.opacity = 1;
         this.spd = spd;
-        this.drawOrder = 80;
+        this.drawOrder = 99;
         this.where = where;
         this.position = Vector2.copy(this.where.position);
 
+        this.errX = errX;
+        this.errY = errY;
         this.img = img_explode1;
     }
 
@@ -1789,7 +1908,7 @@ class Anime_explode extends Anime {
         }
 
         ctx.globalAlpha = this.opacity;
-        ctx.drawImage(this.img, this.position.x - this.size / 2, this.position.y - this.size / 2, this.size, this.size);
+        ctx.drawImage(this.img, this.position.x + this.errX - this.size / 2, this.position.y + this.errY - this.size / 2, this.size, this.size);
         ctx.globalAlpha = 1;
     }
 }
@@ -1906,5 +2025,35 @@ class Anime_circleAct extends Anime {
 
         ctx.globalAlpha = 1;
         ctx.lineWidth = 1;
+    }
+}
+
+class Anime_BrokenPlayer extends Anime {
+    player;
+    scalarX;
+    scalarY;
+    startedTick;
+
+    constructor(game, player) {
+        super(game);
+        this.player = player;
+        this.scalarX = 100;
+        this.scalarY = 50;
+        this.startedTick = this.game.previousTicks;
+    }
+
+    update(delta) {
+        super.update(delta);
+        if (this.startedTick + 3000 < this.game.previousTicks) {
+            this.game.removeComponent(this);
+            this.game.removeComponent(this.player);
+        }
+    }
+
+    draw(ctx) {
+        if (this.tmpTick + 600 < this.game.previousTicks) {
+            new Anime_explode(this.game, 50, 0.02, this.player, Math.random()*this.scalarX - this.scalarX/2, Math.random()*this.scalarY - this.scalarY/2);
+            this.tmpTick = this.game.previousTicks;
+        }
     }
 }
