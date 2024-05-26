@@ -253,6 +253,17 @@ class Game {
         for (let component of this.components) {
             component.draw(this.ctx);
         }
+        if(this.levelupTextActive){
+            this.ctx.fillStyle="white";
+            this.ctx.font="50px Silkscreen";
+            this.ctx.fillText("LEVEL UP!",GAME_WIDTH/2,GAME_HEIGHT/2);
+        }
+        
+        if(this.clearTextActive){
+            this.ctx.fillStyle="white";
+            this.ctx.font="50px Silkscreen";
+            this.ctx.fillText("GAME CLEAR",GAME_WIDTH/2,GAME_HEIGHT/2);
+        }
     }
     runLoop(timestamp) {
         requestAnimationFrame(this.runLoop.bind(this));
@@ -401,13 +412,24 @@ class Game {
 
     checkLevelUp() {
         if (this.mobList.length == 0) {
+            if(this.level==3){
+                this.clearTextActive=true;
+                setTimeout(()=>{
+                    this.clearTextActive=false;
+                },5000);
+            }else{
             console.log("lvup");
 
             //레벨 업! 표시
 
             this.level++;
-            setTimeout(function () { this.levelStarter(this.level) }.bind(this), 2000);
-
+            this.levelupTextActive=true;
+            setTimeout(()=>{
+                this.levelStarter(this.level);
+                this.levelupTextActive=false;
+            },5000)
+            //setTimeout(function () { this.levelStarter(this.level) }.bind(this), 2000);
+            }
         }
     }
 
