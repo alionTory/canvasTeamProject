@@ -49,6 +49,8 @@ BALL_EXPLOTION_RAD = 29;
 WAVE_DEFAULT_DIST = 300;
 WAVE_DIST = 1000;
 
+MAX_LEVEL = 3;
+
 // .......................................................................................................................
 
 var img_normalBox = new Image(); img_normalBox.src = "imgFolder/normalBox.png";
@@ -334,6 +336,11 @@ class Game {
         this.mobList = [];
 
         //적공격들 초기화
+        this.atkClear();
+
+    }
+
+    atkClear() {
         for (let comp of this.components) {
             if (comp instanceof Box || comp instanceof Mob || comp instanceof Attacks)
                 this.removeComponent(comp);
@@ -383,7 +390,7 @@ class Game {
                 break;
 
             default:
-                this.gameEnd("win");
+                console.err("잘못된 레벨...");
         }
     }
 
@@ -416,15 +423,20 @@ class Game {
 
     checkLevelUp() {
         if (this.mobList.length == 0) {
-            if(this.level==3){
+            //레벨 클리어
+            if(this.level == MAX_LEVEL){
                 this.clearTextActive=true;
+
+                //적공격들 초기화
+                this.atkClear();
+                this.gameEnd("win");
+
                 setTimeout(()=>{
                     this.clearTextActive=false;
                 },5000);
-            }else{
+            }else {
+            //레벨 클리어
             console.log("lvup");
-
-            //레벨 업! 표시
 
             this.level++;
             this.levelupTextActive=true;
@@ -633,7 +645,7 @@ class Player extends ComponentObject {
         this.fixCursorPosition();
 
         if (gameInput.click && this.leftTimeForNextParrying <= 0) {
-            new Anime_rectAct(this.game, this, 4, 700, "green");
+            new Anime_rectAct(this.game, this, 4, 700, "lightGreen");
             this.isParrying = true;
             this.leftTimeForNextParrying = this.parryingCoolTime;
             // 나누기 2하는 이유는, parringToleranceTime을 충돌 이벤트 전후로 나눠서 적용하기 위함.
