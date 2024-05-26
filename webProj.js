@@ -256,12 +256,16 @@ class Game {
         if(this.levelupTextActive){
             this.ctx.fillStyle="white";
             this.ctx.font="50px Silkscreen";
+            this.ctx.textAlign = "center";
+            this.ctx.textBaseline = "middle";
             this.ctx.fillText("LEVEL UP!",GAME_WIDTH/2,GAME_HEIGHT/2);
         }
         
         if(this.clearTextActive){
             this.ctx.fillStyle="white";
             this.ctx.font="50px Silkscreen";
+            this.ctx.textAlign = "center";
+            this.ctx.textBaseline = "middle";
             this.ctx.fillText("GAME CLEAR",GAME_WIDTH/2,GAME_HEIGHT/2);
         }
     }
