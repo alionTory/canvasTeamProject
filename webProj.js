@@ -333,7 +333,7 @@ class Game {
         switch (level) {
             // wave * WAVE_DISTANCE가 다음 웨이브 몬스터의 요구 이동 거리
             case 1:
-                this.wave = 0; 
+                this.wave = 0;
                 this.mobList.push(new Mob_pawn(this, new Vector2(100, 200)));
                 this.mobList.push(new Mob_pawn(this, new Vector2(250, 200)));
                 this.mobList.push(new Mob_pawn(this, new Vector2(400, 200)));
@@ -416,7 +416,7 @@ class Game {
     }
 
     gameEnd(winLose) {
-        switch(winLose) {
+        switch (winLose) {
             case "win":
                 console.log("win");
                 break;
@@ -572,6 +572,7 @@ class Player extends ComponentObject {
     isParrying;
     parryingToleranceTime;  // 충돌 이벤트 전후로 parringToleranceTime / 2 초 동안은 패링으로 쳐줌
     leftParryingPersistTime;
+    isHiding  // 은신 스킬이 활성화 되어있는지
     constructor(game) {
         super(game);
         this.drawOrder = 90;
@@ -581,6 +582,7 @@ class Player extends ComponentObject {
         this.launchDirection = new Vector2(0, -1);
         this.radianLimit = Math.PI / 6;
         this.heart = PLAYER_HEART;
+        this.isHiding = false;
 
         // 공 패링 관련
         this.parryingCoolTime = 0.5;
@@ -620,8 +622,8 @@ class Player extends ComponentObject {
     }
 
     processParrying(delta) {
-        if (this.leftTimeForNextParrying > 0) 
-            this.leftTimeForNextParrying -= delta;  
+        if (this.leftTimeForNextParrying > 0)
+            this.leftTimeForNextParrying -= delta;
 
         if (this.leftParryingPersistTime > 0)
             this.leftParryingPersistTime -= delta;
@@ -1611,10 +1613,11 @@ class Attacks extends ComponentObject {
     }
 
     processCollision(collisionInfo) {
-        new Anime_explode(this.game, this.radius * 5, 0.02, this);
-        this.game.removeComponent(this);
-        this.game.player.playerHurt(this.damage);
-
+        if (collisionInfo.component instanceof Player && !this.game.player.isHiding) {
+            new Anime_explode(this.game, this.radius * 5, 0.02, this);
+            this.game.removeComponent(this);
+            this.game.player.playerHurt(this.damage);
+        }
     }
 }
 
@@ -1658,7 +1661,7 @@ class Lazer extends Attacks {
     }
 }
 
-class NextWaveInfo extends ComponentObject{
+class NextWaveInfo extends ComponentObject {
     frontestMob;
 
     constructor(game) {
@@ -1674,7 +1677,7 @@ class NextWaveInfo extends ComponentObject{
     draw(ctx) {
         if (this.frontestMob == null) return;
         if (this.frontestMob.frontestBox.position.y >= -(2 + WAVE_DEFAULT_DIST)) return;
-        
+
         let dist = -(WAVE_DEFAULT_DIST + this.frontestMob.frontestBox.position.y);
         let leftTime = dist / this.frontestMob.leastSpeed.y;
 
@@ -1820,7 +1823,7 @@ class Anime_rectAct extends Anime {
         ctx.lineTo(this.comp.position.x + (this.comp.width / 2 + this.gap), this.comp.position.y + (this.comp.height / 2 + this.gap));
         ctx.lineTo(this.comp.position.x - (this.comp.width / 2 + this.gap), this.comp.position.y + (this.comp.height / 2 + this.gap));
         ctx.lineTo(this.comp.position.x - (this.comp.width / 2 + this.gap), this.comp.position.y - (this.comp.height / 2 + this.gap));
-        ctx.stroke(); 
+        ctx.stroke();
 
         ctx.globalAlpha = 1;
         ctx.lineWidth = 1;
