@@ -488,12 +488,10 @@ class ComponentObject extends Component {
 
     static checkCollision(object1, object2) {
         if (object1.shape instanceof ShapeCircle) {
-            if (object2.shape instanceof ShapeAABB) {
-                let collisionInfo = object1.shape.getCollisionInfo(object2.shape);
-                if (collisionInfo[0].isCollided) {
-                    object2.processCollision(collisionInfo[1]);
-                    object1.processCollision(collisionInfo[0]);
-                }
+            let collisionInfo = object1.shape.getCollisionInfo(object2.shape);
+            if (collisionInfo[0].isCollided) {
+                object2.processCollision(collisionInfo[1]);
+                object1.processCollision(collisionInfo[0]);
             }
         }
     }
@@ -1595,6 +1593,8 @@ class Attacks extends ComponentObject {
         this.shape = new ShapeCircle(this, this.position, this.radius);
 
         this.drawOrder = 55;
+
+        this.game.collideablesWithBall.push(this);
     }
 
     update(delta) {
@@ -1617,6 +1617,9 @@ class Attacks extends ComponentObject {
             new Anime_explode(this.game, this.radius * 5, 0.02, this);
             this.game.removeComponent(this);
             this.game.player.playerHurt(this.damage);
+        } else if (collisionInfo.component instanceof PlayerBall) {
+            new Anime_explode(this.game, this.radius * 5, 0.02, this);
+            this.game.removeComponent(this);
         }
     }
 }

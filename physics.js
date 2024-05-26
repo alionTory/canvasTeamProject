@@ -143,6 +143,10 @@ class ShapeCircle extends Shape {
                 console.log(`AABB : (${shape.min.x}, ${shape.min.y}), (${shape.max.x}, ${shape.max.y})`);
             }
             return [circleCollisionInfo, boxCollisionInfo];
+        }else if(shape instanceof ShapeCircle){
+            let distance = Vector2.subtract(this.position, shape.position).getLength();
+            let colided = distance <= this.radius + shape.radius;
+            return [new CollisionInfo(colided, null, shape.owner), new CollisionInfo(colided, null, this.owner)];
         }
     }
 }
