@@ -53,6 +53,32 @@ WAVE_DIST = 1000;
 MAX_LEVEL = 3;
 
 // .......................................................................................................................
+// 상점과의 상호작용.......................................................................................................
+function buy_ball() {
+
+}
+function buy_maxHealth() {
+
+}
+function buy_regeneration() {
+
+}
+function buy_shield() {
+
+}
+function buy_parryCool() {
+
+}
+function buy_explodeUp() {
+
+}
+function buy_reloadCool() {
+
+}
+function buy_hidingSkill() {
+
+}
+// .......................................................................................................................
 
 var img_normalBox = new Image(); img_normalBox.src = "imgFolder/normalBox.png";
 var img_cannonBox = new Image(); img_cannonBox.src = "imgFolder/cannonBox.png";
