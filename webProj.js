@@ -12,6 +12,7 @@ HIDING_SKILL_PERSIST_TIME = 15;
 START_COIN = 0;
 PLAYER_SPD = 444;
 BALL_MISS_DMG = 50;
+SHIELD_COOL = 3000;
 
 BOX_PRICE_NORMAL = 30;
 BOX_PRICE_BARRIER = 40;
@@ -69,12 +70,18 @@ function buy_regeneration() {
     $(".heart").text(game.player.heart + "/" + (lifemax * 200 + 1000));
 }
 function buy_shield() {
-    game.player.shieldCount += 1;
-    $("#shield").text("보호막(" + (3 - game.player.shieldCount) + "/3)");
-    if (game.player.shieldCount >= 3) {
+    if (game.player.shieldLevel < 3) {
+        game.player.shieldLevel++;
+        $("#shield").text("보호막(" + (3 - game.player.shieldLevel) + "/3)");
+    }
+    if (game.player.shieldLevel == 3) {
         $("#shieldpurchase").text("sold out");
         $("#shieldpurchase").attr("disabled", true);
-    }
+        return;
+    }   
+
+
+
 }
 function buy_parryCool() {
     game.player.parryingToleranceTime = Math.floor((game.player.parryingToleranceTime + 0.2) * 10) / 10;
@@ -873,6 +880,8 @@ class Player extends ComponentObject {
     shieldCount;
     shield;
     isBroken;  // 게임 오버되어 플레이어 캐릭터가 부서졌는가
+    shieldLevel;
+
     constructor(game) {
         super(game);
         this.drawOrder = 90;
@@ -881,6 +890,12 @@ class Player extends ComponentObject {
         this.maxSpeed = PLAYER_SPD;
         this.launchDirection = new Vector2(0, -1);
         this.radianLimit = Math.PI / 6;
+        this.heart = PLAYER_HEART;
+        this.isHiding = false;
+        this.shieldCount = 0;
+        this.shieldLevel = 0;
+        this.isBroken = false;
+
         this.init();
 
         this.shield = new PlayerShield(this.game, this);
@@ -944,6 +959,7 @@ class Player extends ComponentObject {
     processShield() {
         new Anime_rectAct(this.game, this, 4, 500, "lightBlue");
         this.shieldCount--;
+        this.shield.tmpTick = this.game.previousTicks;
     }
 
     processParrying(delta) {
@@ -1033,6 +1049,7 @@ class PlayerShield extends ComponentObject {
     theta3;
     orbitRad;
     radius;
+    shieldCool;
     constructor(game, player) {
         super(game);
         this.player = player;
@@ -1040,6 +1057,7 @@ class PlayerShield extends ComponentObject {
         this.orbitRad = 5;
         this.radius = 2;
         this.drawOrder = 99;
+        this.shieldCool = SHIELD_COOL;
     }
 
     update(delta) {
@@ -1053,6 +1071,18 @@ class PlayerShield extends ComponentObject {
 
         this.theta2 = this.theta + 120 * Math.PI / 180;
         this.theta3 = this.theta + 240 * Math.PI / 180;
+
+        this.shieldRegen();
+    }
+
+    shieldRegen() {
+        if (this.tmpTick  + this.shieldCool < this.game.previousTicks) {
+            this.tmpTick = this.game.previousTicks;
+            if (this.player.shieldLevel > this.shieldCount) {
+                this.player.shieldCount++;
+                console.log("shield");
+            }
+        }
     }
 
     draw(ctx) {
