@@ -8,7 +8,7 @@ let fixedCursorPosition = null;
 // 나중에 상수여야하는 것들은 CONST 붙일것.
 STARTLEVEL = 1;
 
-PLAYER_HEART = 1000;
+PLAYER_HEART = 100;
 PLAYER_SPD = 444;
 BALL_MISS_DMG = 50;
 
@@ -154,7 +154,7 @@ const GAME_HEIGHT = 700;
 
 class Game {
     level;
-    state;  // "main-menu", "paused", "game"
+    state;  // "main-menu", "paused", "game", "gameover", "gameclear"
     currentBgm;
 
     ctx;
@@ -176,7 +176,7 @@ class Game {
 
     nextWaveInfo;
 
-    pauseScreenButtons;
+    buttons;
 
     constructor(ctx) {
         this.level = STARTLEVEL; // 임시
@@ -191,7 +191,7 @@ class Game {
         this.addList = [];
         this.removalList = [];
         this.collideablesWithBall = [];
-        this.pauseScreenButtons = [];
+        this.buttons = {};
         this.loadComponents();
         //setInterval(this.runLoop.bind(this), this.delta * 1000);
         requestAnimationFrame(this.runLoop.bind(this));
@@ -208,11 +208,17 @@ class Game {
         this.playerArrow = new PlayerLaunchAngleArrow(this, this.player, this.playerBall);
         new Anime_background(this);
 
-        let resume = new Button(this, new Vector2(GAME_WIDTH / 2, GAME_HEIGHT / 2 - 50), 130, 50, "resume");
-        resume.setEventHandler(function () { this.game.state = "game"; });
-        let toMainMenu = new Button(this, new Vector2(GAME_WIDTH / 2, GAME_HEIGHT / 2 + 50), 130, 50, "main menu");
-        toMainMenu.setEventHandler(function () { this.game.startMainMenu(); });
+        let pauseScreenResumeButton = new Button(this, new Vector2(GAME_WIDTH / 2, GAME_HEIGHT / 2 - 50), 130, 50, "resume");
+        pauseScreenResumeButton.setEventHandler(function () { this.game.resumeGame(); });
+        this.buttons["pause-resume"] = pauseScreenResumeButton;
 
+        let pauseScreenMainmenuButton = new Button(this, new Vector2(GAME_WIDTH / 2, GAME_HEIGHT / 2 + 50), 130, 50, "main menu");
+        pauseScreenMainmenuButton.setEventHandler(function () { this.game.startMainMenu(); });
+        this.buttons["pause-mainmenu"] = pauseScreenMainmenuButton;
+
+        let gameEndMainmenuButton = new Button(this, new Vector2(GAME_WIDTH / 2, GAME_HEIGHT / 2), 130, 50, "main menu");
+        gameEndMainmenuButton.setEventHandler(function () { this.game.startMainMenu(); });
+        this.buttons["gameend-mainmenu"] = gameEndMainmenuButton;
     }
 
     startMainMenu() {
@@ -220,7 +226,7 @@ class Game {
         $("#game-section").hide();
         $("#main-menu-section").show();
         this.stopBgm();
-        }
+    }
 
     startGame(level) {
         this.state = "game";
@@ -230,18 +236,30 @@ class Game {
         this.levelStarter(level);
     }
 
+    pauseGame() {
+        this.state = "paused";
+        this.buttons["pause-resume"].isActive = true;
+        this.buttons["pause-mainmenu"].isActive = true;
+    }
+
+    resumeGame() {
+        this.state = "game";
+        this.buttons["pause-resume"].isActive = false;
+        this.buttons["pause-mainmenu"].isActive = false;
+    }
+
     processInput() {
         if (this.state == "game") {
             this.player.processInput();
             if (gameInput.esc)
-                this.state = "paused";
+                this.pauseGame();
         }
         else if (this.state == "paused") {
-            for (let button of this.pauseScreenButtons) {
-                button.processInput();
-            }
             if (gameInput.esc)
-                this.state = "game";
+                this.resumeGame();
+        }
+        for (let key in this.buttons) {
+            this.buttons[key].processInput();
         }
         gameInput.click = gameInput.esc = false;
     }
@@ -252,7 +270,7 @@ class Game {
         this.previousTicks = timestamp;
 
         this.doAdd();
-        if (this.state == "game") {
+        if (this.state == "game" || this.state == "gameover" || this.state == "gameclear") {
             for (let component of this.components) {
                 component.update(this.delta);
             }
@@ -275,30 +293,30 @@ class Game {
             this.ctx.textBaseline = "middle";
             this.ctx.fillText("LEVEL UP!", GAME_WIDTH / 2, GAME_HEIGHT / 2);
         }
-        
+
         if (this.clearTextActive) {
             this.ctx.fillStyle = "white";
             this.ctx.font = "50px Silkscreen";
             this.ctx.textAlign = "center";
             this.ctx.textBaseline = "middle";
-            this.ctx.fillText("GAME CLEAR!" , GAME_WIDTH / 2, GAME_HEIGHT / 2);
+            this.ctx.fillText("GAME CLEAR!", GAME_WIDTH / 2, GAME_HEIGHT / 2);
         }
-        if(this.overTextActive){
-            this.ctx.fillStyle="white";
-            this.ctx.font="50px Silkscreen";
+        if (this.overTextActive) {
+            this.ctx.fillStyle = "white";
+            this.ctx.font = "50px Silkscreen";
             this.ctx.textAlign = "center";
             this.ctx.textBaseline = "middle";
-            this.ctx.fillText("GAME OVER",GAME_WIDTH/2,GAME_HEIGHT/2);
-            
+            this.ctx.fillText("GAME OVER", GAME_WIDTH / 2, GAME_HEIGHT / 2);
+
         }
-        if(this.scoreTextActive){
-            this.ctx.fillStyle="white";
-            this.ctx.font="50px Silkscreen";
+        if (this.scoreTextActive) {
+            this.ctx.fillStyle = "white";
+            this.ctx.font = "50px Silkscreen";
             this.ctx.textAlign = "center";
             this.ctx.textBaseline = "middle";
-            this.ctx.fillText("SCORE : "+this.score, GAME_WIDTH/2, GAME_HEIGHT/2-70);
+            this.ctx.fillText("SCORE : " + this.score, GAME_WIDTH / 2, GAME_HEIGHT / 2 - 70);
         }
-    }  
+    }
 
     runLoop(timestamp) {
         requestAnimationFrame(this.runLoop.bind(this));
@@ -355,6 +373,11 @@ class Game {
     }
 
     initGame() {
+        // 버튼 초기화
+        for (let key in this.buttons) {
+            this.buttons[key].isActive = false;
+        }
+
         //플레이어 위치 초기화
         this.player.position.x = GAME_WIDTH / 2;
 
@@ -364,14 +387,14 @@ class Game {
         //몹 초기화
         this.mobList = [];
 
-        //적공격들 초기화
-        this.atkClear();
-
+        // 이전 게임에 남아있던 불필요한 componet 제거
+        this.trashComponentClear();
     }
 
-    atkClear() {
+    trashComponentClear() {
         for (let comp of this.components) {
-            if (comp instanceof Box || comp instanceof Mob || comp instanceof Attacks)
+            if (comp instanceof Box || comp instanceof Mob || comp instanceof Attacks
+                || comp instanceof Message || comp instanceof VariableMessage)
                 this.removeComponent(comp);
         }
         this.doRemoval();
@@ -400,7 +423,7 @@ class Game {
                 this.mobList.push(new Mob_pawn(this, new Vector2(450, 100)));
                 this.mobList.push(new Mob_pawn(this, new Vector2(450, 200)));
                 this.mobList.push(new Mob_bishop(this, new Vector2(250, 80)));
-                
+
                 this.playBgm("level1_bgm");
                 break;
 
@@ -412,21 +435,21 @@ class Game {
                 this.mobList.push(new Mob_rook(this, new Vector2(100, 300)));
                 this.mobList.push(new Mob_rook(this, new Vector2(400, 300)));
                 this.mobList.push(new Mob_bishop(this, new Vector2(250, 100)));
-                
+
                 this.playBgm("level2_bgm");
                 break;
 
             case 3:
                 this.wave = 0;
                 this.mobList.push(new Mob_qween(this, new Vector2(250, -650)));
-                
+
                 this.playBgm("level3_bgm");
                 break;
 
             default:
                 console.err("잘못된 레벨...");
         }
-        
+
     }
 
     playBgm(bgmName) {
@@ -520,32 +543,32 @@ class Game {
     }
 
     gameEnd(winLose) {
+        this.state = "gameEnd";
         switch (winLose) {
             case "win":
                 console.log("win");
-                this.clearTextActive = true;
-                this.atkClear();
-            
+                this.trashComponentClear();
+                let clearText = new Message(this, "GAME CLEAR!", new Vector2(GAME_WIDTH / 2, GAME_HEIGHT / 2));
+
                 setTimeout(() => {
-                    this.clearTextActive = false;
-                    this.scoreTextActive = true;
-                    this.state = "stopped";
+                    this.removeComponent(clearText);
+                    new VariableMessage(this, function () { return "SCORE : " + this.game.score; }, new Vector2(GAME_WIDTH / 2, GAME_HEIGHT / 2 - 70));
+                    this.buttons["gameend-mainmenu"].isActive = true;
                 }, 5000);
                 break;
 
             case "lose":
                 console.log("lose");
-                this.overTextActive = true;
+                let gameOverText = new Message(this, "GAME OVER", new Vector2(GAME_WIDTH / 2, GAME_HEIGHT / 2));
                 setTimeout(() => {
-                    this.overTextActive = false;
-                    this.scoreTextActive = true;
-                    this.state="stopped";
+                    this.removeComponent(gameOverText);
+                    new VariableMessage(this, function () { return "SCORE : " + this.game.score; }, new Vector2(GAME_WIDTH / 2, GAME_HEIGHT / 2 - 70));
+                    this.buttons["gameend-mainmenu"].isActive = true;
                 }, 5000)
-                this.overTextActive = true;
                 new Anime_BrokenPlayer(this, this.player);
                 this.removeComponent(this.playerBall);
                 this.removeComponent(this.PlayerLaunchAngleArrow);
-  
+
                 Box.attackAble = false;
                 for (let mob of this.mobList) {
                     mob.leastSpeed = new Vector2(0, 100);
@@ -632,10 +655,10 @@ class Button extends Component {
     text;
     hover;
     eventHandler;
+    isActive;
 
     constructor(game, position, width, height, text) {
         super(game, 101);
-        this.game.pauseScreenButtons.push(this);
         this.position.copyFrom(position);
         this.drawOrder = 101;
         this.width = width;
@@ -643,6 +666,7 @@ class Button extends Component {
         this.text = text;
         this.hover = false;
         this.eventHandler = null;
+        this.isActive = false;
     }
 
     setEventHandler(eventHandler) {
@@ -650,7 +674,7 @@ class Button extends Component {
     }
 
     processInput() {
-        if (this.game.state != "paused")
+        if (!this.isActive)
             return;
 
         if (this.position.x - this.width / 2 <= cursorPosition.x && cursorPosition.x <= this.position.x + this.width / 2
@@ -665,7 +689,7 @@ class Button extends Component {
     }
 
     draw(ctx) {
-        if (this.game.state != "paused")
+        if (!this.isActive)
             return;
 
         ctx.save();
@@ -681,6 +705,50 @@ class Button extends Component {
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
         ctx.fillText(this.text, this.position.x, this.position.y, this.width);
+
+        ctx.restore();
+    }
+}
+
+class Message extends Component {
+    text;
+
+    constructor(game, text, position) {
+        super(game);
+        this.text = text;
+        this.position = position;
+    }
+
+    draw(ctx) {
+        ctx.save();
+
+        ctx.fillStyle = "white";
+        ctx.font = "50px Silkscreen";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(this.text, this.position.x, this.position.y);
+
+        ctx.restore();
+    }
+}
+
+class VariableMessage extends Component {
+    getMessage;
+
+    constructor(game, getMessage, position) {
+        super(game);
+        this.getMessage = getMessage;
+        this.position = position;
+    }
+
+    draw(ctx) {
+        ctx.save();
+
+        ctx.fillStyle = "white";
+        ctx.font = "50px Silkscreen";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(this.getMessage(), this.position.x, this.position.y);
 
         ctx.restore();
     }
@@ -824,8 +892,6 @@ class Player extends ComponentObject {
         }
 
         ctx.restore();
-
-        ctx.globalAlpha = 1;
     }
 }
 
@@ -1293,7 +1359,7 @@ class Box extends ComponentObject {
             this.destroyBox();
         }
     }
-    
+
     playCollisionSound() {
         let crash_mp3 = new Audio("soundFolder/crash.mp3");
         crash_mp3.play();
@@ -1382,7 +1448,7 @@ class CoreBox extends Box {
 
         this.destroyed = true;
     }
-    
+
     playCollisionSound() {
         let coreexplosion_mp3 = new Audio("soundFolder/coreexplosion.mp3");
         coreexplosion_mp3.play();
@@ -1961,7 +2027,7 @@ class Anime_explode extends Anime {
     where;
     errX;
     errY;
-    
+
     constructor(game, size, spd, where, errX, errY) {
         super(game);
         this.size = size;
