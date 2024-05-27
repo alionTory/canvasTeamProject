@@ -8,7 +8,7 @@ let fixedCursorPosition = null;
 // 나중에 상수여야하는 것들은 CONST 붙일것.
 
 PLAYER_HEART = 1000;
-START_COIN = 0;
+START_COIN = 10000;
 PLAYER_SPD = 444;
 BALL_MISS_DMG = 50;
 
@@ -610,6 +610,7 @@ class Game {
                 this.playerBall.ball_id = new BallSkill_2(this, this.playerBall);
                 break;
         }
+        console.log(this.playerBall.ball_id);
     }
 
     gameEnd(winLose) {
@@ -1434,14 +1435,15 @@ class BallSkill_2 extends ComponentObject {
     constructor(game, playerBall) {
         super(game);
         this.playerBall = playerBall;
-        this.combo = 0;
         this.drawOrder = 99;
         this.sizseScalarDefault = 7;
-        this.sizeScaler = this.sizseScalarDefault;
+        this.sizeScalar = this.sizseScalarDefault;
+        this.combo = 0;
         this.comboDiff = 0.85;
     }
 
     comboUp() {
+        console.log("combo!");
         this.combo += this.sizeScalar;
         this.sizeScalar *= this.comboDiff;
         this.playerBall.shape = new ShapeCircle(this.playerBall, this.playerBall.position, this.playerBall.radius + this.combo);
@@ -1488,7 +1490,6 @@ class PlayerBallExplosion extends ComponentObject {
         this.checkCollisionAtConstruct();
 
         //new Anime_circleAct(this.game, this, 0, 700, "green");
-        console.log(this.game.player.explosionRadius);
         new Anime_circleAct(this.game, this, 0, this.game.playerBall.explosionRadius * 22, "green");
     }
 

@@ -21,6 +21,22 @@
 
 
 /* 상점 */
+.heart {
+    display : block;
+    width : 80px;
+    height : 20px;
+}
+.money {
+    display : block;
+    width : 80px;
+    height : 20px;
+}
+.score {
+    display : block;
+    width : 80px;
+    height : 20px;
+}
+
 #store{
     color: #fff;
     display: block;

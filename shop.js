@@ -3,7 +3,6 @@ var lifemax=0;
 var explosionrange=0;
 
 function shopReady(){
-    
     $(".bullet").text("selected");
     $(".bullet").attr("disabled",true);
     $(".bullet").click(function(){
@@ -11,6 +10,11 @@ function shopReady(){
         game.selectBall(0);
         $(this).text("selected");
         $(this).attr("disabled",true);
+
+        $(".cannon").text("select");
+        $(".cannon").attr("disabled",false);
+        $(".lazer").text("select");
+        $(".lazer").attr("disabled",false);
     })
     $(".cannon").click(function(){
         if($(this).text()=="1000g"){
@@ -25,6 +29,11 @@ function shopReady(){
             game.selectBall(1);
             $(this).text("selected");
             $(this).attr("disabled",true);
+
+            $(".bullet").text("select");
+            $(".bullet").attr("disabled",false);
+            $(".lazer").text("select");
+            $(".lazer").attr("disabled",false);
         }
     })
     $(".lazer").click(function(){
@@ -40,6 +49,11 @@ function shopReady(){
             game.selectBall(2);
             $(this).text("selected");
             $(this).attr("disabled",true);
+
+            $(".bullet").text("select");
+            $(".bullet").attr("disabled",false);
+            $(".cannon").text("select");
+            $(".cannon").attr("disabled",false);
         }
     })
     $("#lifeaddition").click(function(){
