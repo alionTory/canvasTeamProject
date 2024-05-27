@@ -8,7 +8,7 @@ let fixedCursorPosition = null;
 // 나중에 상수여야하는 것들은 CONST 붙일것.
 STARTLEVEL = 1;
 
-PLAYER_HEART = 10000;
+PLAYER_HEART = 1000;
 PLAYER_SPD = 444;
 BALL_MISS_DMG = 50;
 
@@ -51,6 +51,64 @@ WAVE_DEFAULT_DIST = 300;
 WAVE_DIST = 1000;
 
 MAX_LEVEL = 3;
+
+function buy_maxHealth() {
+    game.player.heart+=200;
+    $(".heart").text(game.player.heart+"/"+(lifemax*200+1000));
+}
+function buy_regeneration() {
+    if(game.player.heart+300>lifemax*200+1000){
+        game.player.heart=lifemax*200+1000;
+    }
+    else{
+        game.player.heart+=300;
+    }
+    $(".heart").text(game.player.heart+"/"+(lifemax*200+1000)); 
+}
+function buy_shield() {
+    game.player.shieldCount+=1;
+    $("#shield").text("보호막("+(3-game.player.shieldCount)+"/3)");
+    if(game.player.shieldCount>=3){
+        $("#shieldpurchase").text("sold out");
+        $("#shieldpurchase").attr("disabled",true);
+    }
+}
+function buy_parryCool() {
+    game.player.parryingToleranceTime=Math.floor((game.player.parryingToleranceTime+0.2)*10)/10;
+    $("#parring").html("패링시간<br>0.2초 증가<br>(현재: "+game.player.parryingToleranceTime+"초)");
+    if(game.player.parryingToleranceTime>=1){
+        $("#parringtime").text("sold out");
+        $("#parringtime").attr("disabled",true);
+    }
+}
+function buy_explodeUp() {
+    explosionrange+=1;
+    game.playerBall.explosionRadius+=3;
+    $("#explosion").html("폭발 범위<br>증가<br>(현재:"+explosionrange+"강)");
+    if(explosionrange>=4){
+        $("#explosionrange").text("sold out");
+        $("#explosionrange").attr("disabled",true);
+    }
+}
+function buy_reloadCool() {
+    game.playerBall.generatingDelay-=0.5;
+    $("#reload").html("재장전 시간<br> 0.5초 감소<br>(현재: "+game.playerBall.generatingDelay+"초)");
+    if(game.playerBall.generatingDelay<=0.5){
+        $("#reloadtime").text("sold out");
+        $("#reloadtime").attr("disabled",true);
+    }
+    
+}
+function buy_hidingSkill() {
+    if(game.player.isHiding==false){
+        $("#stealth").html("은신 기능<br>(0/1)");
+        $("#stealthpurchase").text("sold out");
+        $("#stealthpurchase").attr("disabled",true);
+    }
+    else{
+        $("#stealth").html("은신 기능<br>(1/1)");
+    }
+}
 
 // .......................................................................................................................
 var img_normalBox = new Image(); img_normalBox.src = "imgFolder/normalBox.png";
@@ -510,11 +568,13 @@ class Game {
 
     addCoin(toAddCoin) {
         console.log("coin : " + (this.coin += toAddCoin) + "(+" + toAddCoin + ")");
+        $(".money").text(this.coin+"g");
         this.addScore(toAddCoin);
     }
 
     addScore(toAddScore) {
         console.log("score : " + (this.score += 10 * toAddScore) + "(+" + 10 * toAddScore + ")");
+        $(".score").text("score:"+this.score);
     }
 
     selectBall(ballNum) {
@@ -884,6 +944,12 @@ class Player extends ComponentObject {
         if (this.heart <= 0) return;
 
         console.log("heart : " + (this.heart -= dmg) + "(-" + dmg + ")");
+        if(this.heart<0){
+            $(".heart").text("0/"+(lifemax*200+1000));
+        }
+        else{
+            $(".heart").text(this.heart+"/"+(lifemax*200+1000));
+        }
         if (this.heart <= 0) {
             this.game.gameEnd("lose");
         }
