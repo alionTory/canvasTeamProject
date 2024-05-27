@@ -11,7 +11,7 @@ PLAYER_HEART = 1000;
 HIDING_SKILL_PERSIST_TIME = 10;
 START_COIN = 0;
 PLAYER_SPD = 444;
-BALL_MISS_DMG = 50;
+BALL_MISS_DMG = 1;
 SHIELD_COOL = 6000;
 
 REGEN_SCALAR = 100;
@@ -40,12 +40,14 @@ LAZER_ERR = 0;
 LAZER_SPD = 100;
 LAZER_DMG = 200;
 
-MOVE_SPD_PAWN = 7;
-MOVE_SPD_KNIGHT = 7;
-MOVE_SPD_BISHOP = 7;
-MOVE_SPD_ROOK = 7;
-MOVE_SPD_QWEEN = 10;
-MOVE_SPD_KING = 10;
+MOVE_SCALAR = 7;
+
+MOVE_SPD_PAWN = MOVE_SCALAR * 1;
+MOVE_SPD_KNIGHT = MOVE_SCALAR * 1;
+MOVE_SPD_BISHOP = MOVE_SCALAR * 1;
+MOVE_SPD_ROOK = MOVE_SCALAR * 1;
+MOVE_SPD_QWEEN = MOVE_SCALAR * 2;
+MOVE_SPD_KING = MOVE_SCALAR * 2;
 
 BALL_SPD_1 = 400;
 BALL_SPD_2 = 500;
@@ -563,7 +565,7 @@ class Game {
     }
 
     tryWaveCall() {
-        if (gameInput.space) {
+        if (gameInput.space && this.state == "game") {
             for (let mob of this.mobList) {
                 if (mob.frontestBox.position.y > -WAVE_DEFAULT_DIST)
                     return;
@@ -582,6 +584,7 @@ class Game {
     }
 
     checkLevelUp() {
+        if (this.state != "game") return;
         if (this.mobList.length == 0) {
             //레벨 클리어
             this.stopBgm();
@@ -642,6 +645,7 @@ class Game {
 
     gameEnd(winLose) {
         this.playerBall.removeSkill();
+        this.removeComponent(this.nextWaveInfo);
         switch (winLose) {
             case "win":
                 this.state = "gameclear";

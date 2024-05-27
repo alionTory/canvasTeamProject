@@ -96,6 +96,8 @@ function shopReady(){
         }
     })
     $("#lifepurchase").click(function(){
+        if (game.player.heart == PLAYER_HEART) return;
+
         if(game.coin>=500){
             buy_regeneration();
             game.coin-=500;
