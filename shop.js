@@ -1,148 +1,132 @@
-var balllist=["playerBall","black","black","black","black"];
-var ballpowerlist=[0,0,0,0,0];
-var lifemax=3;
-var life=3;
+var ball="playerBall";
+var lifemax=0;
 var shield=0;
+var parringtime=1;
+var explosionrange=0;
+var reloadtime=0;
+var stealth=false;
 
 $(document).ready(function(){
-    $("#playerballs li").click(function(){
-        var $this=$(this);
-        var tabid=$this.data("tab");
-
-        $("#playerballs li, #strong li").removeClass("on");
-
-        $this.addClass("on");
-        $("#"+tabid).addClass("on");
-    })
-    $(".strongpo1").click(function(){
-        var par=$(this).parent().parent().attr("id");
-        ballpowerlist[par[4]]+=1;
-        if(ballpowerlist[par[4]]>=20){
-            soldout(par);
-        }
-        $("#"+par+" .pweapon").text(ballpowerlist[par[4]]+"/20");
-    })
-    $(".strongpo2").click(function(){
-        var par=$(this).parent().parent().attr("id");
-        ran = Math.floor((Math.random() * 2) +1);
-        if(ran==1){
-            ballpowerlist[par[4]]+=2;
-        }
-        if(ballpowerlist[par[4]]>=20){
-            soldout(par);
-        }
-        $("#"+par+" .pweapon").text(ballpowerlist[par[4]]+"/20");
-    })
-    $(".strongpo3").click(function(){
-        var par=$(this).parent().parent().attr("id");
-        ran = Math.floor((Math.random() * 3) +1);
-        if(ran==1){
-            ballpowerlist[par[4]]+=3;
-        }
-        if(ballpowerlist[par[4]]>=20){
-            soldout(par);
-        }
-        $("#"+par+" .pweapon").text(ballpowerlist[par[4]]+"/20");
-    })
-    $(".strongpo4").click(function(){
-        var par=$(this).parent().parent().attr("id");
-        ran = Math.floor((Math.random() * 4) +1);
-        if(ran==1){
-            
-            ballpowerlist[par[4]]+=4;
-        }
-        if(ballpowerlist[par[4]]>=20){
-            soldout(par);
-        }
-        $("#"+par+" .pweapon").text(ballpowerlist[par[4]]+"/20");
-    })
-    $(".ball1").click(function(){
+    $(".bullet").click(function(){
         if($(this).text()=="buy"){
-            $(this).text("selet");
+            $(this).text("select");
         }
         else{
-            var par=$(this).parent().parent().attr("id");
-            balllist[par[4]]="bullet";
-            var img="imgFolder\\"+balllist[par[4]]+".png";
-            if($("#"+par+" .ball2").text()=="seleted"){
-                $("#"+par+" .ball2").text("selet");
-                $("#"+par+" .ball2").attr("disabled",false);
+            ball="bullet";
+            if($(".cannon").text()=="selected"){
+                $(".cannon").text("select");
+                $(".cannon").attr("disabled",false);
             }
-            if($("#"+par+" .ball3").text()=="seleted"){
-                $("#"+par+" .ball3").text("selet");
-                $("#"+par+" .ball3").attr("disabled",false);
+            if($(".lazer").text()=="selected"){
+                $(".lazer").text("select");
+                $(".lazer").attr("disabled",false);
             }
-            $(this).text("seleted");
+            $(this).text("selected");
             $(this).attr("disabled",true);
         }
     })
-    $(".ball2").click(function(){
+    $(".cannon").click(function(){
         if($(this).text()=="buy"){
-            $(this).text("selet");
+            $(this).text("select");
         }
         else{
-            var par=$(this).parent().parent().attr("id");
-            balllist[par[4]]="bullet";
-            var img="imgFolder\\"+balllist[par[4]]+".png";
-            if($("#"+par+" .ball1").text()=="seleted"){
-                $("#"+par+" .ball1").text("selet");
-                $("#"+par+" .ball1").attr("disabled",false);
+            ball="canon";
+            if($(".bullet").text()=="selected"){
+                $(".bullet").text("select");
+                $(".bullet").attr("disabled",false);
             }
-            if($("#"+par+" .ball3").text()=="seleted"){
-                $("#"+par+" .ball3").text("selet");
-                $("#"+par+" .ball3").attr("disabled",false);
+            if($(".lazer").text()=="selected"){
+                $(".lazer").text("select");
+                $(".lazer").attr("disabled",false);
             }
             
-            $(this).text("seleted");
+            $(this).text("selected");
             $(this).attr("disabled",true);
         }
     })
-    $(".ball3").click(function(){
+    $(".lazer").click(function(){
         if($(this).text()=="buy"){
-            $(this).text("selet");
+            $(this).text("select");
         }
         else{
-            var par=$(this).parent().parent().attr("id");
-            balllist[par[4]]="bullet";
-            var img="imgFolder\\"+balllist[par[4]]+".png";
-            if($("#"+par+" .ball2").text()=="seleted"){
-                $("#"+par+" .ball2").text("selet");
-                $("#"+par+" .ball2").attr("disabled",false);
+            ball="lazer";
+            if($(".cannon").text()=="selected"){
+                $(".cannon").text("select");
+                $(".cannon").attr("disabled",false);
             }
-            if($("#"+par+" .ball1").text()=="seleted"){
-                $("#"+par+" .ball1").text("selet");
-                $("#"+par+" .ball1").attr("disabled",false);
+            if($(".bullet").text()=="selected"){
+                $(".bullet").text("select");
+                $(".bullet").attr("disabled",false);
             }
             
-            $(this).text("seleted");
+            $(this).text("selected");
             $(this).attr("disabled",true);
         }
     })
     $("#lifeaddition").click(function(){
-        if(lifemax==6){
-            alert("생명 최대량 증가를 사용할 수 없습니다.");
-        }
-        else{
-            lifemax+=1;
-            life+=1;
-            $("#lifemax").text("생명 최대량 추가("+(6-lifemax)+"/3)");
+        lifemax+=1;
+        PLAYER_HEART+=200;
+        $("#lifemax").text("생명 최대량 추가("+lifemax+"/3)");
+        $(".heart").text(PLAYER_HEART+"/"+(lifemax*200+1000));
+        if(lifemax==3){
+            $(this).text("sold out");
+            $(this).attr("disabled",true);
         }
     })
     $("#lifepurchase").click(function(){
-        if(life>=lifemax){
-            alert("생명 최대량 증가를 사용할 수 없습니다.");
+        if(PLAYER_HEART+300>lifemax*200+1000){
+            PLAYER_HEART=lifemax*200+1000;
         }
         else{
-            life+=1;
+            PLAYER_HEART+=300;
+        }
+        $(".heart").text(PLAYER_HEART+"/"+(lifemax*200+1000));
+        if(PLAYER_HEART>=lifemax){
+            $(this).text("sold out");
+            $(this).attr("disabled",true);
         }
     })
     $("#shieldpurchase").click(function(){
+        shield+=1;
+        $("#shield").text("보호막("+(2-shield)+"/2)");
         if(shield>=2){
-            alert("보호막을 더이상 추가 할 수 없습니다.");
+            $(this).text("sold out");
+            $(this).attr("disabled",true);
+        }
+    })
+    $("#parringtime").click(function(){
+        parringtime=Math.floor((parringtime+0.2)*10)/10;
+        $("#parring").html("패링시간<br>0.2초 증가<br>(현재: "+parringtime+"초)");
+        if(parringtime>=2.5){
+            $(this).text("sold out");
+            $(this).attr("disabled",true);
+        }
+    })
+    $("#explosionrange").click(function(){
+        explosionrange+=1;
+        BALL_EXPLOTION_RAD+=4;
+        $("#explosion").html("폭발 범위<br>증가<br>(현재:"+explosionrange+"강)");
+        if(explosionrange>=5){
+            $(this).text("sold out");
+            $(this).attr("disabled",true);
+        }
+    })
+    $("#reloadtime").click(function(){
+        reloadtime+=1;
+        $("#reload").html("재장전 시간<br> 1초 감소<br>(현재: "+((10-reloadtime)/10)+"초)");
+        if(reloadtime>=5){
+            $(this).text("sold out");
+            $(this).attr("disabled",true);
+        }
+    })
+    $("#stealthpurchase").click(function(){
+        if(stealth==false){
+            $("#stealth").html("은신 기능<br>(0/1)");
+            $(this).text("sold out");
+            $(this).attr("disabled",true);
         }
         else{
-            shield+=1;
-            $("#shield").text("보호막("+(2-shield)+"/2)");
+            $("#stealth").html("은신 기능<br>(1/1)");
         }
     })
 })
