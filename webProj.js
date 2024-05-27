@@ -54,9 +54,6 @@ MAX_LEVEL = 3;
 
 // .......................................................................................................................
 // 상점과의 상호작용.......................................................................................................
-function buy_ball() {
-
-}
 function selectBall(game,playerBall, ballNum) {
         playerBall.removeSkill();
     switch(ballNum) {
@@ -72,7 +69,7 @@ function selectBall(game,playerBall, ballNum) {
     }
 }
 function buy_maxHealth() {
-
+    
 }
 function buy_regeneration() {
 
@@ -462,6 +459,22 @@ class Game {
                 this.mobList.push(new Mob_rook(this, new Vector2(100, 300)));
                 this.mobList.push(new Mob_rook(this, new Vector2(400, 300)));
                 this.mobList.push(new Mob_bishop(this, new Vector2(250, 100)));
+
+                this.wave = 10;
+                this.mobList.push(new Mob_rook(this, new Vector2(70, 100)));
+                this.mobList.push(new Mob_bishop(this, new Vector2(250, 300)));
+                this.mobList.push(new Mob_rook(this, new Vector2(430, 100)));
+                this.mobList.push(new Mob_rook(this, new Vector2(70, 300)));
+                this.mobList.push(new Mob_bishop(this, new Vector2(250, 100)));
+                this.mobList.push(new Mob_rook(this, new Vector2(430, 300)));
+
+                this.wave = 20;
+                this.mobList.push(new Mob_knight(this, new Vector2(70, 100)));
+                this.mobList.push(new Mob_knight(this, new Vector2(250, 300)));
+                this.mobList.push(new Mob_knight(this, new Vector2(430, 100)));
+                this.mobList.push(new Mob_knight(this, new Vector2(70, 300)));
+                this.mobList.push(new Mob_knight(this, new Vector2(250, 100)));
+                this.mobList.push(new Mob_knight(this, new Vector2(430, 300)));
                 
                 this.playBgm("level2_bgm");
                 break;
@@ -498,6 +511,7 @@ class Game {
             return;
         }
         this.currentBgm.currentTime = 0;
+        this.currentBgm.volume = 
         this.currentBgm.loop = true;
         this.currentBgm.play();
     }
@@ -1903,8 +1917,8 @@ class Mob_rook extends Mob {
         this.data =
             [["N", "L", "N"]
                 , ["n", "O", "n"]
-                , ["n", "b", "n"]
-                , ["n", "n", "n"]]
+                , ["n", "n", "n"]
+                , ["b", "b", "b"]]
 
         mobMaker(this, this.data);
 
