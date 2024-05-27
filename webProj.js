@@ -312,17 +312,18 @@ class Game {
         if (this.state == "game") {
             this.player.processInput();
             if (gameInput.esc)
-                this.state = "paused";
+                this.pauseGame();
         }
         else if (this.state == "paused") {
-            for (let button of this.pauseScreenButtons) {
-                button.processInput();
-            }
             if (gameInput.esc)
-                this.state = "game";
+                this.resumeGame();
+        }
+        for (let key in this.buttons) {
+            this.buttons[key].processInput();
         }
         gameInput.click = gameInput.esc = false;
     }
+
     updateGame(timestamp) {
         this.delta = (timestamp - this.previousTicks) / 1000;
         if (this.delta > 0.05)
