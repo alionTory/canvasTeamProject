@@ -7,7 +7,7 @@ let fixedCursorPosition = null;
 // 밸런스 전역변수들.......................................................................................................
 // 나중에 상수여야하는 것들은 CONST 붙일것.
 
-PLAYER_HEART = 1000;
+PLAYER_HEART = 10;
 START_COIN = 0;
 PLAYER_SPD = 444;
 BALL_MISS_DMG = 50;
@@ -630,6 +630,7 @@ class Game {
     }
 
     gameEnd(winLose) {
+        this.playerBall.removeSkill();
         switch (winLose) {
             case "win":
                 this.state = "gameclear";
@@ -661,7 +662,6 @@ class Game {
                 }, 5000)
                 new Anime_BrokenPlayer(this, this.player);
 
-                Box.attackAble = false;
                 for (let mob of this.mobList) {
                     mob.leastSpeed = new Vector2(0, 100);
                 }
@@ -1520,7 +1520,6 @@ class PlayerLaunchAngleArrow extends Component {
 // 박스 관련
 
 class Box extends ComponentObject {
-    static attackAble = true;
     relativePosition;
     width;
     height;
@@ -1565,7 +1564,7 @@ class Box extends ComponentObject {
         //this.speed = Vector2.copy(this.owner.speed);
         this.position = Vector2.plus(this.owner.position, this.relativePosition);
         super.update(delta);
-        if (Box.attackAble)
+        if (this.game.state != "gameover")
             this.doAttack();
     }
 
