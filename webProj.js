@@ -530,7 +530,6 @@ class Game {
                     this.clearTextActive = false;
                     this.scoreTextActive = true;
                     this.state = "stopped";
-                    this.addMainMenuButton();
                 }, 5000);
                 break;
 
@@ -541,7 +540,6 @@ class Game {
                     this.overTextActive = false;
                     this.scoreTextActive = true;
                     this.state="stopped";
-                    this.addMainMenuButton();
                 }, 5000)
                 this.overTextActive = true;
                 new Anime_BrokenPlayer(this, this.player);
