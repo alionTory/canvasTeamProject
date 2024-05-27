@@ -2144,11 +2144,11 @@ class Attacks extends ComponentObject {
                     } else {
                         this.game.player.playerHurt(this.damage);
                     }
-                    new Anime_explode(this.game, this.radius * 5, 0.02, this);
+                    new Anime_explode(this.game, this.radius * 5, 0.02, this, 0, 0);
                     this.game.removeComponent(this);
                 }
             } else if (collisionInfo.component instanceof PlayerBall) {
-                new Anime_explode(this.game, this.radius * 5, 0.02, this);
+                new Anime_explode(this.game, this.radius * 5, 0.02, this, 0, 0);
                 this.game.removeComponent(this);
             }
         }
