@@ -1,12 +1,10 @@
 var ball="playerBall";
 var lifemax=0;
-var shield=0;
-var parringtime=1;
 var explosionrange=0;
-var reloadtime=0;
-var stealth=false;
 
 $(document).ready(function(){
+    $(".bullet").text("selected");
+    $(".bullet").attr("disabled",true);
     $(".bullet").click(function(){
         if($(this).text()=="buy"){
             $(this).text("select");
@@ -27,109 +25,90 @@ $(document).ready(function(){
         }
     })
     $(".cannon").click(function(){
-        if($(this).text()=="buy"){
-            $(this).text("select");
-        }
+        if($(this).text()=="1000g"){
+            if(game.coin>=1000){
+                $(this).text("select");
+                game.coin-=1000;
+                $(".money").text(coin+"g");
+            }
+       }
         else{
-            ball="canon";
-            if($(".bullet").text()=="selected"){
-                $(".bullet").text("select");
-                $(".bullet").attr("disabled",false);
-            }
-            if($(".lazer").text()=="selected"){
-                $(".lazer").text("select");
-                $(".lazer").attr("disabled",false);
-            }
-            
+            ball="cannon";
+            select_ball(ball);
             $(this).text("selected");
             $(this).attr("disabled",true);
             game.selectBall(1);
         }
     })
     $(".lazer").click(function(){
-        if($(this).text()=="buy"){
-            $(this).text("select");
+        if($(this).text()=="1000g"){
+            if(game.coin>=1000){
+                $(this).text("select");
+                game.coin-=1000;
+                $(".money").text(coin+"g");
+            }
         }
         else{
             ball="lazer";
-            if($(".cannon").text()=="selected"){
-                $(".cannon").text("select");
-                $(".cannon").attr("disabled",false);
-            }
-            if($(".bullet").text()=="selected"){
-                $(".bullet").text("select");
-                $(".bullet").attr("disabled",false);
-            }
-            
+            select_ball(ball);
             $(this).text("selected");
             $(this).attr("disabled",true);
             game.selectBall(2);
         }
     })
     $("#lifeaddition").click(function(){
-        lifemax+=1;
-        PLAYER_HEART+=200;
-        $("#lifemax").text("생명 최대량 추가("+lifemax+"/3)");
-        $(".heart").text(PLAYER_HEART+"/"+(lifemax*200+1000));
-        if(lifemax==3){
-            $(this).text("sold out");
-            $(this).attr("disabled",true);
+        if(game.coin>=1000){
+            lifemax+=1;
+            $("#lifemax").text("생명 최대량 추가("+(3-lifemax)+"/3)");
+            buy_maxHealth(lifemax);
+            if(lifemax==3){
+                $(this).text("sold out");
+                $(this).attr("disabled",true);
+            }
+            game.coin-=1000;
+            $(".money").text(coin+"g");
         }
     })
     $("#lifepurchase").click(function(){
-        if(PLAYER_HEART+300>lifemax*200+1000){
-            PLAYER_HEART=lifemax*200+1000;
-        }
-        else{
-            PLAYER_HEART+=300;
-        }
-        $(".heart").text(PLAYER_HEART+"/"+(lifemax*200+1000));
-        if(PLAYER_HEART>=lifemax){
-            $(this).text("sold out");
-            $(this).attr("disabled",true);
+        if(game.coin>=500){
+            buy_regeneration();
+            game.coin-=500;
+            $(".money").text(coin+"g");
         }
     })
     $("#shieldpurchase").click(function(){
-        shield+=1;
-        $("#shield").text("보호막("+(2-shield)+"/2)");
-        if(shield>=2){
-            $(this).text("sold out");
-            $(this).attr("disabled",true);
+        if(game.coin>=2000){
+            buy_shield();
+            game.coin-=2000;
+            $(".money").text(coin+"g");
         }
     })
     $("#parringtime").click(function(){
-        parringtime=Math.floor((parringtime+0.2)*10)/10;
-        $("#parring").html("패링시간<br>0.2초 증가<br>(현재: "+parringtime+"초)");
-        if(parringtime>=2.5){
-            $(this).text("sold out");
-            $(this).attr("disabled",true);
+        if(game.coin>=500){
+            buy_parryCool();
+            game.coin-=500;
+            $(".money").text(coin+"g");
         }
     })
     $("#explosionrange").click(function(){
-        explosionrange+=1;
-        BALL_EXPLOTION_RAD+=4;
-        $("#explosion").html("폭발 범위<br>증가<br>(현재:"+explosionrange+"강)");
-        if(explosionrange>=5){
-            $(this).text("sold out");
-            $(this).attr("disabled",true);
+        if(game.coin>=500){
+            buy_explodeUp();
+            game.coin-=500;
+            $(".money").text(coin+"g");
         }
     })
     $("#reloadtime").click(function(){
-        reloadtime+=1;
-        $("#reload").html("재장전 시간<br> 1초 감소<br>(현재: "+((10-reloadtime)/10)+"초)");
-        if(reloadtime>=5){
-            $(this).text("sold out");
-            $(this).attr("disabled",true);
+        if(game.coin>=1000){
+            buy_reloadCool();
+            game.coin-=1000;
+            $(".money").text(coin+"g");
         }
     })
     $("#stealthpurchase").click(function(){
-        if(stealth==false){
-            $("#stealth").html("은신 기능<br>(0/1)");
-            $(this).text("sold out");
-            $(this).attr("disabled",true);
-        }
-        else{
-            $("#stealth").html("은신 기능<br>(1/1)");
+        if(game.coin>=2000){
+            buy_hidingSkill();
+            game.coin-=2000;
+            $(".money").text(coin+"g");
         }
     })
 })
