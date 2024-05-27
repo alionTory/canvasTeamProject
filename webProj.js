@@ -7,8 +7,8 @@ let fixedCursorPosition = null;
 // 밸런스 전역변수들.......................................................................................................
 // 나중에 상수여야하는 것들은 CONST 붙일것.
 
-PLAYER_HEART = 100;
-START_COIN = 10000;
+PLAYER_HEART = 1000;
+START_COIN = 0;
 PLAYER_SPD = 444;
 BALL_MISS_DMG = 50;
 
@@ -55,59 +55,59 @@ MAX_LEVEL = 3;
 //상점관련함수/\.........................................................................................
 
 function buy_maxHealth() {
-    game.player.heart += 200;
-    $(".heart").text(game.player.heart + "/" + (lifemax * 200 + 1000));
+    game.player.heart+=200;
+    $(".heart").text(game.player.heart+"/"+(lifemax*200+1000));
 }
 function buy_regeneration() {
-    if (game.player.heart + 300 > lifemax * 200 + 1000) {
-        game.player.heart = lifemax * 200 + 1000;
+    if(game.player.heart+300>lifemax*200+1000){
+        game.player.heart=lifemax*200+1000;
     }
-    else {
-        game.player.heart += 300;
+    else{
+        game.player.heart+=300;
     }
-    $(".heart").text(game.player.heart + "/" + (lifemax * 200 + 1000));
+    $(".heart").text(game.player.heart+"/"+(lifemax*200+1000)); 
 }
 function buy_shield() {
-    game.player.shieldCount += 1;
-    $("#shield").text("보호막(" + (3 - game.player.shieldCount) + "/3)");
-    if (game.player.shieldCount >= 3) {
+    game.player.shieldCount+=1;
+    $("#shield").text("보호막("+(3-game.player.shieldCount)+"/3)");
+    if(game.player.shieldCount>=3){
         $("#shieldpurchase").text("sold out");
-        $("#shieldpurchase").attr("disabled", true);
+        $("#shieldpurchase").attr("disabled",true);
     }
 }
 function buy_parryCool() {
-    game.player.parryingToleranceTime = Math.floor((game.player.parryingToleranceTime + 0.2) * 10) / 10;
-    $("#parring").html("패링시간<br>0.2초 증가<br>(현재: " + game.player.parryingToleranceTime + "초)");
-    if (game.player.parryingToleranceTime >= 1) {
+    game.player.parryingToleranceTime=Math.floor((game.player.parryingToleranceTime+0.2)*10)/10;
+    $("#parring").html("패링시간<br>0.2초 증가<br>(현재: "+game.player.parryingToleranceTime+"초)");
+    if(game.player.parryingToleranceTime>=1){
         $("#parringtime").text("sold out");
-        $("#parringtime").attr("disabled", true);
+        $("#parringtime").attr("disabled",true);
     }
 }
 function buy_explodeUp() {
-    explosionrange += 1;
-    game.playerBall.explosionRadius += 3;
-    $("#explosion").html("폭발 범위<br>증가<br>(현재:" + explosionrange + "강)");
-    if (explosionrange >= 4) {
+    explosionrange+=1;
+    game.playerBall.explosionRadius+=3;
+    $("#explosion").html("폭발 범위<br>증가<br>(현재:"+explosionrange+"강)");
+    if(explosionrange>=4){
         $("#explosionrange").text("sold out");
-        $("#explosionrange").attr("disabled", true);
+        $("#explosionrange").attr("disabled",true);
     }
 }
 function buy_reloadCool() {
-    game.playerBall.generatingDelay -= 0.5;
-    $("#reload").html("재장전 시간<br> 0.5초 감소<br>(현재: " + game.playerBall.generatingDelay + "초)");
-    if (game.playerBall.generatingDelay <= 0.5) {
+    game.playerBall.generatingDelay-=0.5;
+    $("#reload").html("재장전 시간<br> 0.5초 감소<br>(현재: "+game.playerBall.generatingDelay+"초)");
+    if(game.playerBall.generatingDelay<=0.5){
         $("#reloadtime").text("sold out");
-        $("#reloadtime").attr("disabled", true);
+        $("#reloadtime").attr("disabled",true);
     }
-
+    
 }
 function buy_hidingSkill() {
-    if (game.player.isHiding == false) {
+    if(game.player.isHiding==false){
         $("#stealth").html("은신 기능<br>(0/1)");
         $("#stealthpurchase").text("sold out");
-        $("#stealthpurchase").attr("disabled", true);
+        $("#stealthpurchase").attr("disabled",true);
     }
-    else {
+    else{
         $("#stealth").html("은신 기능<br>(1/1)");
     }
 }
@@ -247,6 +247,7 @@ class Game {
         this.collideablesWithBall = [];
         this.buttons = {};
         this.loadComponents();
+        this.startCountdown=this.startCountdown.bind(this);
         //setInterval(this.runLoop.bind(this), this.delta * 1000);
         requestAnimationFrame(this.runLoop.bind(this));
 
@@ -263,11 +264,19 @@ class Game {
         new Anime_background(this);
 
         let pauseScreenResumeButton = new Button(this, new Vector2(GAME_WIDTH / 2, GAME_HEIGHT / 2 - 50), 130, 50, "resume");
-        pauseScreenResumeButton.setEventHandler(function () { this.game.resumeGame(); });
+        pauseScreenResumeButton.setEventHandler(function () {             
+            this.hidePauseScreenButtons();
+            this.startCountdown(() => {
+                this.state = "game";
+            });
+        }.bind(this));
         this.buttons["pause-resume"] = pauseScreenResumeButton;
 
         let pauseScreenMainmenuButton = new Button(this, new Vector2(GAME_WIDTH / 2, GAME_HEIGHT / 2 + 50), 130, 50, "main menu");
-        pauseScreenMainmenuButton.setEventHandler(function () { this.game.startMainMenu(); });
+        pauseScreenMainmenuButton.setEventHandler(function () {  
+            this.hidePauseScreenButtons();
+            this.startMainMenu();
+         }.bind(this));
         this.buttons["pause-mainmenu"] = pauseScreenMainmenuButton;
 
         let gameEndMainmenuButton = new Button(this, new Vector2(GAME_WIDTH / 2, GAME_HEIGHT / 2 + 50), 130, 50, "main menu");
@@ -302,6 +311,8 @@ class Game {
         this.state = "paused";
         this.buttons["pause-resume"].isActive = true;
         this.buttons["pause-mainmenu"].isActive = true;
+        this.buttons["pause-resume"].visible = true;
+        this.buttons["pause-mainmenu"].visible = true;
         $("#game-canvas").removeClass("hide_cursor");
     }
 
@@ -315,12 +326,16 @@ class Game {
     processInput() {
         if (this.state == "game") {
             this.player.processInput();
-            if (gameInput.esc)
+            if (gameInput.esc){
                 this.pauseGame();
+            }
         }
         else if (this.state == "paused") {
-            if (gameInput.esc)
-                this.resumeGame();
+            if (gameInput.esc){
+                this.startCountdown(() => {
+                    this.resumeGame();
+                });
+            }
         }
         for (let key in this.buttons) {
             this.buttons[key].processInput();
@@ -573,13 +588,23 @@ class Game {
 
     addCoin(toAddCoin) {
         console.log("coin : " + (this.coin += toAddCoin) + "(+" + toAddCoin + ")");
-        $(".money").text(this.coin + "g");
+        if(this.coin>=1000){
+            $(".money").text(Math.floor(this.coin/1000)+"kg");
+        }
+        else{
+            $(".money").text(this.coin+"g");
+        }
         this.addScore(toAddCoin);
     }
 
     addScore(toAddScore) {
         console.log("score : " + (this.score += 10 * toAddScore) + "(+" + 10 * toAddScore + ")");
-        $(".score").text("score:" + this.score);
+        if(this.score>=1000){
+            $(".score").text("score:"+Math.floor(this.score/1000)+"k");
+        }
+        else{
+            $(".score").text("score:"+this.score);
+        }
     }
 
     selectBall(ballNum) {
@@ -595,7 +620,6 @@ class Game {
                 this.playerBall.ball_id = new BallSkill_2(this, this.playerBall);
                 break;
         }
-        console.log(this.playerBall.ball_id);
     }
 
     gameEnd(winLose) {
@@ -630,6 +654,7 @@ class Game {
                 }, 5000)
                 new Anime_BrokenPlayer(this, this.player);
 
+                Box.attackAble = false;
                 for (let mob of this.mobList) {
                     mob.leastSpeed = new Vector2(0, 100);
                 }
@@ -637,6 +662,49 @@ class Game {
                 break;
         }
     }
+    startCountdown(callback) {
+        for (let key in this.buttons) {
+            this.buttons[key].visible = false;
+        }
+
+        let countdown = 3;
+        const countdownElement = document.createElement('div');
+        countdownElement.id = 'countdown';
+
+        const gameCanvas = document.getElementById("game-canvas");
+        const canvasRect = gameCanvas.getBoundingClientRect();
+
+        countdownElement.style.position = 'absolute';
+        countdownElement.style.top = `${canvasRect.top + canvasRect.height / 2}px`;
+        countdownElement.style.left = `${canvasRect.left + canvasRect.width / 2}px`;
+        countdownElement.style.transform = 'translate(-50%, -50%)';
+        countdownElement.style.color = 'white';
+        countdownElement.style.fontSize = '80px';
+        countdownElement.style.zIndex = '1000';
+        countdownElement.innerHTML = countdown;
+        document.body.appendChild(countdownElement);
+
+        const interval = setInterval(() => {
+            countdown--;
+            if (countdown > 0) {
+                countdownElement.innerHTML = countdown;
+            } else {
+                clearInterval(interval);
+                document.body.removeChild(countdownElement);
+                callback();
+            }
+        }, 1000);
+    }
+    showPauseScreenButtons() {
+            this.buttons["pause-resume"].visible=true;
+            this.buttons["pause-mainmenu"].visible=true; 
+    }
+
+    hidePauseScreenButtons() {
+            this.buttons["pause-resume"].visible=false;
+            this.buttons["pause-mainmenu"].visible=false;
+    }
+
 }
 
 class Component {
@@ -716,6 +784,7 @@ class Button extends Component {
     hover;
     eventHandler;
     isActive;
+    visible;
 
     constructor(game, position, width, height, text) {
         super(game, 101);
@@ -727,6 +796,7 @@ class Button extends Component {
         this.hover = false;
         this.eventHandler = null;
         this.isActive = false;
+        this.visible=false;
     }
 
     setEventHandler(eventHandler) {
@@ -734,7 +804,7 @@ class Button extends Component {
     }
 
     processInput() {
-        if (!this.isActive)
+        if (!this.isActive||!this.visible)
             return;
 
         if (this.position.x - this.width / 2 <= cursorPosition.x && cursorPosition.x <= this.position.x + this.width / 2
@@ -749,7 +819,7 @@ class Button extends Component {
     }
 
     draw(ctx) {
-        if (!this.isActive)
+        if (!this.visible)
             return;
 
         ctx.save();
@@ -785,7 +855,6 @@ class Message extends Component {
         super(game);
         this.text = text;
         this.position = position;
-        this.drawOrder = 101;
     }
 
     draw(ctx) {
@@ -808,7 +877,6 @@ class VariableMessage extends Component {
         super(game);
         this.getMessage = getMessage;
         this.position = position;
-        this.drawOrder = 101;
     }
 
     draw(ctx) {
@@ -943,11 +1011,11 @@ class Player extends ComponentObject {
         if (this.heart <= 0) return;
 
         console.log("heart : " + (this.heart -= dmg) + "(-" + dmg + ")");
-        if (this.heart < 0) {
-            $(".heart").text("0/" + (lifemax * 200 + 1000));
+        if(this.heart<0){
+            $(".heart").text("0/"+(lifemax*200+1000));
         }
-        else {
-            $(".heart").text(this.heart + "/" + (lifemax * 200 + 1000));
+        else{
+            $(".heart").text(this.heart+"/"+(lifemax*200+1000));
         }
         if (this.heart <= 0) {
             this.game.gameEnd("lose");
@@ -1376,15 +1444,14 @@ class BallSkill_2 extends ComponentObject {
     constructor(game, playerBall) {
         super(game);
         this.playerBall = playerBall;
+        this.combo = 0;
         this.drawOrder = 99;
         this.sizseScalarDefault = 7;
-        this.sizeScalar = this.sizseScalarDefault;
-        this.combo = 0;
+        this.sizeScaler = this.sizseScalarDefault;
         this.comboDiff = 0.85;
     }
 
     comboUp() {
-        console.log("combo!");
         this.combo += this.sizeScalar;
         this.sizeScalar *= this.comboDiff;
         this.playerBall.shape = new ShapeCircle(this.playerBall, this.playerBall.position, this.playerBall.radius + this.combo);
@@ -1431,6 +1498,7 @@ class PlayerBallExplosion extends ComponentObject {
         this.checkCollisionAtConstruct();
 
         //new Anime_circleAct(this.game, this, 0, 700, "green");
+        console.log(this.game.player.explosionRadius);
         new Anime_circleAct(this.game, this, 0, this.game.playerBall.explosionRadius * 22, "green");
     }
 
@@ -1492,6 +1560,7 @@ class PlayerLaunchAngleArrow extends Component {
 // 박스 관련
 
 class Box extends ComponentObject {
+    static attackAble = true;
     relativePosition;
     width;
     height;
@@ -1536,7 +1605,7 @@ class Box extends ComponentObject {
         //this.speed = Vector2.copy(this.owner.speed);
         this.position = Vector2.plus(this.owner.position, this.relativePosition);
         super.update(delta);
-        if (this.game.state != "gameover")
+        if (Box.attackAble)
             this.doAttack();
     }
 
