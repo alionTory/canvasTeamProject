@@ -29,12 +29,11 @@ $(document).ready(function(){
             if(game.coin>=1000){
                 $(this).text("select");
                 game.coin-=1000;
-                $(".money").text(coin+"g");
+                $(".money").text(game.coin+"g");
             }
        }
         else{
             ball="cannon";
-            select_ball(ball);
             $(this).text("selected");
             $(this).attr("disabled",true);
             game.selectBall(1);
@@ -50,7 +49,6 @@ $(document).ready(function(){
         }
         else{
             ball="lazer";
-            select_ball(ball);
             $(this).text("selected");
             $(this).attr("disabled",true);
             game.selectBall(2);

@@ -195,7 +195,7 @@ class Game {
         //setInterval(this.runLoop.bind(this), this.delta * 1000);
         requestAnimationFrame(this.runLoop.bind(this));
 
-        this.coin = 0;
+        this.coin = 10000;
         this.score = 0;
 
         this.nextWaveInfo = new NextWaveInfo(this);
