@@ -55,59 +55,59 @@ MAX_LEVEL = 3;
 //상점관련함수/\.........................................................................................
 
 function buy_maxHealth() {
-    game.player.heart+=200;
-    $(".heart").text(game.player.heart+"/"+(lifemax*200+1000));
+    game.player.heart += 200;
+    $(".heart").text(game.player.heart + "/" + (lifemax * 200 + 1000));
 }
 function buy_regeneration() {
-    if(game.player.heart+300>lifemax*200+1000){
-        game.player.heart=lifemax*200+1000;
+    if (game.player.heart + 300 > lifemax * 200 + 1000) {
+        game.player.heart = lifemax * 200 + 1000;
     }
-    else{
-        game.player.heart+=300;
+    else {
+        game.player.heart += 300;
     }
-    $(".heart").text(game.player.heart+"/"+(lifemax*200+1000)); 
+    $(".heart").text(game.player.heart + "/" + (lifemax * 200 + 1000));
 }
 function buy_shield() {
-    game.player.shieldCount+=1;
-    $("#shield").text("보호막("+(3-game.player.shieldCount)+"/3)");
-    if(game.player.shieldCount>=3){
+    game.player.shieldCount += 1;
+    $("#shield").text("보호막(" + (3 - game.player.shieldCount) + "/3)");
+    if (game.player.shieldCount >= 3) {
         $("#shieldpurchase").text("sold out");
-        $("#shieldpurchase").attr("disabled",true);
+        $("#shieldpurchase").attr("disabled", true);
     }
 }
 function buy_parryCool() {
-    game.player.parryingToleranceTime=Math.floor((game.player.parryingToleranceTime+0.2)*10)/10;
-    $("#parring").html("패링시간<br>0.2초 증가<br>(현재: "+game.player.parryingToleranceTime+"초)");
-    if(game.player.parryingToleranceTime>=1){
+    game.player.parryingToleranceTime = Math.floor((game.player.parryingToleranceTime + 0.2) * 10) / 10;
+    $("#parring").html("패링시간<br>0.2초 증가<br>(현재: " + game.player.parryingToleranceTime + "초)");
+    if (game.player.parryingToleranceTime >= 1) {
         $("#parringtime").text("sold out");
-        $("#parringtime").attr("disabled",true);
+        $("#parringtime").attr("disabled", true);
     }
 }
 function buy_explodeUp() {
-    explosionrange+=1;
-    game.playerBall.explosionRadius+=3;
-    $("#explosion").html("폭발 범위<br>증가<br>(현재:"+explosionrange+"강)");
-    if(explosionrange>=4){
+    explosionrange += 1;
+    game.playerBall.explosionRadius += 3;
+    $("#explosion").html("폭발 범위<br>증가<br>(현재:" + explosionrange + "강)");
+    if (explosionrange >= 4) {
         $("#explosionrange").text("sold out");
-        $("#explosionrange").attr("disabled",true);
+        $("#explosionrange").attr("disabled", true);
     }
 }
 function buy_reloadCool() {
-    game.playerBall.generatingDelay-=0.5;
-    $("#reload").html("재장전 시간<br> 0.5초 감소<br>(현재: "+game.playerBall.generatingDelay+"초)");
-    if(game.playerBall.generatingDelay<=0.5){
+    game.playerBall.generatingDelay -= 0.5;
+    $("#reload").html("재장전 시간<br> 0.5초 감소<br>(현재: " + game.playerBall.generatingDelay + "초)");
+    if (game.playerBall.generatingDelay <= 0.5) {
         $("#reloadtime").text("sold out");
-        $("#reloadtime").attr("disabled",true);
+        $("#reloadtime").attr("disabled", true);
     }
-    
+
 }
 function buy_hidingSkill() {
-    if(game.player.isHiding==false){
+    if (game.player.isHiding == false) {
         $("#stealth").html("은신 기능<br>(0/1)");
         $("#stealthpurchase").text("sold out");
-        $("#stealthpurchase").attr("disabled",true);
+        $("#stealthpurchase").attr("disabled", true);
     }
-    else{
+    else {
         $("#stealth").html("은신 기능<br>(1/1)");
     }
 }
@@ -172,11 +172,11 @@ $(function () {
     game = new Game(gameCanvas[0].getContext("2d"));
 
     shopReady();
-    $("#volumeSlider").on('input',function(){
-        const volume=$(this).val();
-        level1_bgm.volume=volume;
-        level2_bgm.volume=volume;
-        level3_bgm.volume=volume;
+    $("#volumeSlider").on('input', function () {
+        const volume = $(this).val();
+        level1_bgm.volume = volume;
+        level2_bgm.volume = volume;
+        level3_bgm.volume = volume;
     });
 });
 
@@ -253,7 +253,7 @@ class Game {
         this.collideablesWithBall = [];
         this.buttons = {};
         this.loadComponents();
-        this.startCountdown=this.startCountdown.bind(this);
+        this.startCountdown = this.startCountdown.bind(this);
         //setInterval(this.runLoop.bind(this), this.delta * 1000);
         requestAnimationFrame(this.runLoop.bind(this));
 
@@ -270,7 +270,7 @@ class Game {
         new Anime_background(this);
 
         let pauseScreenResumeButton = new Button(this, new Vector2(GAME_WIDTH / 2, GAME_HEIGHT / 2 - 50), 130, 50, "resume");
-        pauseScreenResumeButton.setEventHandler(function () {             
+        pauseScreenResumeButton.setEventHandler(function () {
             this.hidePauseScreenButtons();
             this.startCountdown(() => {
                 this.state = "game";
@@ -279,10 +279,10 @@ class Game {
         this.buttons["pause-resume"] = pauseScreenResumeButton;
 
         let pauseScreenMainmenuButton = new Button(this, new Vector2(GAME_WIDTH / 2, GAME_HEIGHT / 2 + 50), 130, 50, "main menu");
-        pauseScreenMainmenuButton.setEventHandler(function () {  
+        pauseScreenMainmenuButton.setEventHandler(function () {
             this.hidePauseScreenButtons();
             this.startMainMenu();
-         }.bind(this));
+        }.bind(this));
         this.buttons["pause-mainmenu"] = pauseScreenMainmenuButton;
 
         let gameEndMainmenuButton = new Button(this, new Vector2(GAME_WIDTH / 2, GAME_HEIGHT / 2 + 50), 130, 50, "main menu");
@@ -332,12 +332,12 @@ class Game {
     processInput() {
         if (this.state == "game") {
             this.player.processInput();
-            if (gameInput.esc){
+            if (gameInput.esc) {
                 this.pauseGame();
             }
         }
         else if (this.state == "paused") {
-            if (gameInput.esc){
+            if (gameInput.esc) {
                 this.startCountdown(() => {
                     this.resumeGame();
                 });
@@ -610,22 +610,22 @@ class Game {
 
     addCoin(toAddCoin) {
         console.log("coin : " + (this.coin += toAddCoin) + "(+" + toAddCoin + ")");
-        if(this.coin>=toKunit){
-            $(".money").text(Math.floor(this.coin/1000)+"kg");
+        if (this.coin >= toKunit) {
+            $(".money").text(Math.floor(this.coin / 1000) + "kg");
         }
-        else{
-            $(".money").text(this.coin+"g");
+        else {
+            $(".money").text(this.coin + "g");
         }
         this.addScore(toAddCoin);
     }
 
     addScore(toAddScore) {
         console.log("score : " + (this.score += 10 * toAddScore) + "(+" + 10 * toAddScore + ")");
-        if(this.score>=toKunit){
-            $(".score").text("score:"+Math.floor(this.score/1000)+"k");
+        if (this.score >= toKunit) {
+            $(".score").text("score:" + Math.floor(this.score / 1000) + "k");
         }
-        else{
-            $(".score").text("score:"+this.score);
+        else {
+            $(".score").text("score:" + this.score);
         }
     }
 
@@ -718,13 +718,13 @@ class Game {
         }, 1000);
     }
     showPauseScreenButtons() {
-            this.buttons["pause-resume"].visible=true;
-            this.buttons["pause-mainmenu"].visible=true; 
+        this.buttons["pause-resume"].visible = true;
+        this.buttons["pause-mainmenu"].visible = true;
     }
 
     hidePauseScreenButtons() {
-            this.buttons["pause-resume"].visible=false;
-            this.buttons["pause-mainmenu"].visible=false;
+        this.buttons["pause-resume"].visible = false;
+        this.buttons["pause-mainmenu"].visible = false;
     }
 
 }
@@ -816,7 +816,7 @@ class Button extends Component {
         this.hover = false;
         this.eventHandler = null;
         this.isActive = false;
-        this.visible=false;
+        this.visible = false;
     }
 
     setEventHandler(eventHandler) {
@@ -824,7 +824,7 @@ class Button extends Component {
     }
 
     processInput() {
-        if (!this.isActive||!this.visible)
+        if (!this.isActive || !this.visible)
             return;
 
         if (this.position.x - this.width / 2 <= cursorPosition.x && cursorPosition.x <= this.position.x + this.width / 2
@@ -1031,11 +1031,11 @@ class Player extends ComponentObject {
         if (this.heart <= 0) return;
 
         console.log("heart : " + (this.heart -= dmg) + "(-" + dmg + ")");
-        if(this.heart<0){
-            $(".heart").text("0/"+(lifemax*200+1000));
+        if (this.heart < 0) {
+            $(".heart").text("0/" + (lifemax * 200 + 1000));
         }
-        else{
-            $(".heart").text(this.heart+"/"+(lifemax*200+1000));
+        else {
+            $(".heart").text(this.heart + "/" + (lifemax * 200 + 1000));
         }
         if (this.heart <= 0) {
             this.game.gameEnd("lose");
@@ -2194,8 +2194,7 @@ class Attacks extends ComponentObject {
     }
 
     update(delta) {
-
-        if (this.position.y >= 800) {
+        if (this.position.y >= 800 || this.position.y <= -100) {
             this.game.removeComponent(this);
         }
 
