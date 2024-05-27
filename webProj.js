@@ -292,11 +292,17 @@ class Game {
             
         }
         if(this.scoreTextActive){
+            this.ctx.save();
+            this.ctx.fillStyle="rgba(0,0,0,0.5)";
+            const textWidth=this.ctx.measureText("SCORE : " + this.score).width;
+            this.ctx.fillRect(GAME_WIDTH / 2 - textWidth / 2 - 10, GAME_HEIGHT / 2 - 70 - 20, textWidth + 20, 40);
+
             this.ctx.fillStyle="white";
             this.ctx.font="50px Silkscreen";
             this.ctx.textAlign = "center";
             this.ctx.textBaseline = "middle";
             this.ctx.fillText("SCORE : "+this.score, GAME_WIDTH/2, GAME_HEIGHT/2-70);
+            this.ctx.restore();
         }
     }  
 
