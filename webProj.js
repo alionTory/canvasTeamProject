@@ -57,6 +57,20 @@ MAX_LEVEL = 3;
 function buy_ball() {
 
 }
+function selectBall(game,playerBall, ballNum) {
+        playerBall.removeSkill();
+    switch(ballNum) {
+        case 0: 
+            playerBall.ball_id = null;
+            break;
+        case 1:
+            playerBall.ball_id = new BallSkill_1(game, playerBall);
+            break;
+        case 2:
+            playerBall.ball_id = new BallSkill_2(game, playerBall);
+            break;
+    }
+}
 function buy_maxHealth() {
 
 }
@@ -929,6 +943,8 @@ class PlayerBall extends ComponentObject {
     // 주의 : 강화되는 순간 brokenBlockCount는 0으로 초기화됨. 따라서 실제 부순 블록 개수와는 달라질 수 있음.
     brokenBlockCount;
 
+    ball_id;
+
     constructor(game, player) {
         super(game);
         this.player = player;
@@ -938,6 +954,8 @@ class PlayerBall extends ComponentObject {
         this.generatingDelay = 2;
         this.launchSpeedList = [BALL_SPD_1, BALL_SPD_2, BALL_SPD_3];
         this.launchSpeed = this.launchSpeedList[0];
+        this.ball_id = null;
+        
         this.init();
     }
 
@@ -1044,6 +1062,15 @@ class PlayerBall extends ComponentObject {
         this.ignoreCollideWithPlayer = true;
     }
 
+    removeSkill() {
+        if (this.ball_id != null)
+            this.game.removeComponent(this.ball_id);
+
+        if (this.ball_id instanceof BallSkill_2) {
+            this.ball_id.comboReset();
+        }
+    }
+
     updateParrying() {
         if (this.game.player.isParrying) {
             this.parryingSuccess();
@@ -1059,6 +1086,10 @@ class PlayerBall extends ComponentObject {
             this.setState("reinforcing");
         else if (this.parryingCount == 2)
             this.setState("reinforced");
+
+        if (this.ball_id instanceof BallSkill_2) {
+            this.ball_id.comboUp();
+        }
     }
 
     parryingFailed() {
@@ -1071,6 +1102,10 @@ class PlayerBall extends ComponentObject {
             this.setState("reinforcing");
         else if (this.parryingCount == 0)
             this.setState("normal");
+
+        if (this.ball_id instanceof BallSkill_2) {
+            this.ball_id.comboReset();
+        }
     }
 
     checkParryingAfterCollision(delta) {
@@ -1124,22 +1159,6 @@ class PlayerBall extends ComponentObject {
         }
     }
 
-
-    // 공의 최소 y좌표 속도 보장하려는 용도. 부자연스러워서 삭제함
-    /*applyMinYSpeed() {
-        if (-this.minYSpeed < this.speed.y && this.speed.y < this.minYSpeed) {
-            if (this.speed.y <= 0)
-                this.speed.y = -this.minYSpeed;
-            else
-                this.speed.y = this.minYSpeed;
-
-            if (this.speed.x <= 0)
-                this.speed.x = -Math.sqrt(this.launchSpeed * this.launchSpeed - this.minYSpeed * this.minYSpeed);
-            else
-                this.speed.x = Math.sqrt(this.launchSpeed * this.launchSpeed - this.minYSpeed * this.minYSpeed);
-        }
-    }*/
-
     draw(ctx) {
         ctx.save();
 
@@ -1148,21 +1167,13 @@ class PlayerBall extends ComponentObject {
         ctx.globalAlpha = 1;
 
         if (this.state == "reinforcing") {
-            // ctx.beginPath();
-            // ctx.lineWidth = 3;
-            // ctx.arc(this.position.x, this.position.y, this.radius + 5, 0, Math.PI * 2);
-            // ctx.strokeStyle = "yellow";
-            // ctx.stroke();
+
             if (this.game.previousTicks > this.tmpTick + 200) {
                 new Anime_circleAct(this.game, this, 0, this.explosionRadius * 20, "green");
                 this.tmpTick = this.game.previousTicks;
             }
         } else if (this.state == "reinforced") {
-            // ctx.beginPath();
-            // ctx.lineWidth = 3;
-            // ctx.arc(this.position.x, this.position.y, this.radius + 5, 0, Math.PI * 2);
-            // ctx.strokeStyle = "red";
-            // ctx.stroke();
+
             if (this.game.previousTicks > this.tmpTick + 100) {
                 new Anime_circleAct(this.game, this, 0, this.explosionRadius * 20, "green");
                 this.tmpTick = this.game.previousTicks;
@@ -1171,6 +1182,123 @@ class PlayerBall extends ComponentObject {
         ctx.restore();
     }
 
+}
+
+//위성
+class BallSkill_1 extends ComponentObject{
+    playerBall;
+    theta;
+    orbitRad;
+    radius;
+    clockwise;
+    dirChangeCool;
+
+    constructor(game, playerBall) {
+        super(game);
+        this.playerBall = playerBall;
+        this.theta = 0
+        this.orbitRad = 40;
+        this.radius = 5;
+        this.drawOrder = 99;
+        this.clockwise = 1;
+        this.dirChangeCool = 0;
+
+        this.shape = new ShapeCircle(this, this.position, this.radius);
+    }
+
+    processCollision(collisionInfo) {
+        if (collisionInfo.component instanceof Mob && this.dirChangeCool == 0) {
+            this.clockwise *= -1;
+            this.dirChangeCool = 10;
+            new Anime_circleAct(this.game, this, 0, 600, "lightGreen");
+            //this.playerBall.addBrokenBlockCount(); // 이건써야하는지 몰라서 내비둠.
+        }
+    }
+
+    update(delta) {
+        this.position = new Vector2(this.playerBall.position.x + Math.sin(this.theta) * this.orbitRad,this.playerBall.position.y + Math.cos(this.theta) * this.orbitRad)
+        super.update(delta);
+        this.updateShape();
+        this.theta += 6 * Math.PI / 180 * this.clockwise;
+
+        if (this.theta == Math.PI * 2) this.theta = 0;
+
+        if (this.dirChangeCool > 0) this.dirChangeCool--;
+
+        for (let collideable of this.game.collideablesWithBall) {
+            if (this.game.components.indexOf(collideable) >= 0) {
+                ComponentObject.checkCollision(this, collideable);
+            }
+
+        }
+    }
+
+    updateShape() {
+        this.shape.position = Vector2.copy(this.position);
+    }
+
+    draw(ctx) {
+        ctx.strokeStyle = "lightGreen";
+        ctx.fillStyle = 'lightGreen';
+
+        ctx.beginPath();
+        ctx.arc(this.position.x, this.position.y, this.radius, 0, Math.PI * 2, false);
+        ctx.stroke();
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(this.playerBall.position.x, this.playerBall.position.y, this.orbitRad, 0, Math.PI * 2, false);
+        ctx.stroke();
+    }
+}
+
+//판정 강화
+class BallSkill_2 extends ComponentObject{
+    playerBall;
+    combo;
+    sizeScalar;
+    sizseScalarDefault;
+    comboDiff;
+
+    constructor(game, playerBall) {
+        super(game);
+        this.playerBall = playerBall;
+        this.combo = 0;
+        this.drawOrder = 99;
+        this.sizseScalarDefault = 7;
+        this.sizeScaler = this.sizseScalarDefault;
+        this.comboDiff = 0.85;
+    }
+
+    comboUp() {
+        this.combo += this.sizeScalar;
+        this.sizeScalar *= this.comboDiff;
+        this.playerBall.shape = new ShapeCircle(this.playerBall, this.playerBall.position, this.playerBall.radius + this.combo);
+    }
+
+    comboReset() {
+        this.combo = 0;
+        this.sizeScalar = this.sizseScalarDefault;
+        this.playerBall.shape = new ShapeCircle(this.playerBall, this.playerBall.position, this.playerBall.radius);
+    }
+
+    update(delta) {
+        this.position = Vector2.copy(this.playerBall.position);
+        super.update(delta);
+    }
+
+    draw(ctx) {
+        ctx.strokeStyle = "lightGreen";
+        ctx.fillStyle = 'lightGreen';
+        ctx.globalAlpha = 0.2;
+
+        ctx.beginPath();
+        ctx.arc(this.position.x, this.position.y, this.playerBall.radius + this.combo, 0, Math.PI * 2, false);
+        ctx.stroke();
+        ctx.fill();
+
+        ctx.globalAlpha = 1;
+    }
 }
 
 // 강화된 공의 폭발 효과를 처리. 현재는 주변 블록과의 충돌 처리만 맡고 있음.
@@ -1310,7 +1438,7 @@ class Box extends ComponentObject {
     processCollision(collisionInfo) {
         this.owner.processCollision(collisionInfo);
 
-        if (collisionInfo.component instanceof PlayerBall) {
+        if (collisionInfo.component instanceof PlayerBall || BallSkill_1) {
             this.playCollisionSound();
             //충돌된 상자 제거
             this.destroyBox();
