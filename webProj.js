@@ -54,29 +54,81 @@ MAX_LEVEL = 3;
 
 // .......................................................................................................................
 // 상점과의 상호작용.......................................................................................................
+function select_ball(ball){
+    img_playerBall.src="imgFolder/"+ball+".png";
+    console.log(img_playerBall.src);
+    if($(".bullet").text()=="selected"){
+        $(".bullet").text("select");
+        $(".bullet").attr("disabled",false);
+    }
+    if($(".cannon").text()=="selected"){
+        $(".cannon").text("select");
+        $(".cannon").attr("disabled",false);
+    }
+    if($(".lazer").text()=="selected"){
+        $(".lazer").text("select");
+        $(".lazer").attr("disabled",false);
+    }
+}
 function buy_ball() {
 
 }
 function buy_maxHealth() {
-
+    game.player.heart+=200;
+    $(".heart").text(game.player.heart+"/"+(lifemax*200+1000));
 }
 function buy_regeneration() {
-
+    if(game.player.heart+300>lifemax*200+1000){
+        game.player.heart=lifemax*200+1000;
+    }
+    else{
+        game.player.heart+=300;
+    }
+    $(".heart").text(game.player.heart+"/"+(lifemax*200+1000)); 
 }
 function buy_shield() {
-
+    game.player.shieldCount+=1;
+    $("#shield").text("보호막("+(3-game.player.shieldCount)+"/3)");
+    if(game.player.shieldCount>=3){
+        $("#shieldpurchase").text("sold out");
+        $("#shieldpurchase").attr("disabled",true);
+    }
 }
 function buy_parryCool() {
-
+    game.player.parryingToleranceTime=Math.floor((game.player.parryingToleranceTime+0.2)*10)/10;
+    $("#parring").html("패링시간<br>0.2초 증가<br>(현재: "+game.player.parryingToleranceTime+"초)");
+    if(game.player.parryingToleranceTime>=1){
+        $("#parringtime").text("sold out");
+        $("#parringtime").attr("disabled",true);
+    }
 }
 function buy_explodeUp() {
-
+    explosionrange+=1;
+    game.playerBall.explosionRadius+=3;
+    $("#explosion").html("폭발 범위<br>증가<br>(현재:"+explosionrange+"강)");
+    if(explosionrange>=4){
+        $("#explosionrange").text("sold out");
+        $("#explosionrange").attr("disabled",true);
+    }
 }
 function buy_reloadCool() {
-
+    game.playerBall.generatingDelay-=0.5;
+    $("#reload").html("재장전 시간<br> 0.5초 감소<br>(현재: "+game.playerBall.generatingDelay+"초)");
+    if(game.playerBall.generatingDelay<=0.5){
+        $("#reloadtime").text("sold out");
+        $("#reloadtime").attr("disabled",true);
+    }
+    
 }
 function buy_hidingSkill() {
-
+    if(game.player.isHiding==false){
+        $("#stealth").html("은신 기능<br>(0/1)");
+        $("#stealthpurchase").text("sold out");
+        $("#stealthpurchase").attr("disabled",true);
+    }
+    else{
+        $("#stealth").html("은신 기능<br>(1/1)");
+    }
 }
 // .......................................................................................................................
 
@@ -538,11 +590,13 @@ class Game {
 
     addCoin(toAddCoin) {
         console.log("coin : " + (this.coin += toAddCoin) + "(+" + toAddCoin + ")");
+        $(".money").text(this.coin+"g");
         this.addScore(toAddCoin);
     }
 
     addScore(toAddScore) {
         console.log("score : " + (this.score += 10 * toAddScore) + "(+" + 10 * toAddScore + ")");
+        $(".score").text("score:"+this.score);
     }
 
     gameEnd(winLose) {
@@ -738,7 +792,7 @@ class Player extends ComponentObject {
         this.radianLimit = Math.PI / 6;
         this.heart = PLAYER_HEART;
         this.isHiding = false;
-        this.shieldCount = 3;
+        this.shieldCount = 0;
 
         this.shield = new PlayerShield(this.game, this);
 
@@ -753,6 +807,7 @@ class Player extends ComponentObject {
         this.shape = new ShapeAABB(this, new Vector2(), new Vector2());
         game.collideablesWithBall.push(this);
     }
+
 
     processInput() {
         if (gameInput.left && 0 < this.position.x) {
@@ -782,6 +837,9 @@ class Player extends ComponentObject {
     processShield() {
         new Anime_rectAct(this.game, this, 4, 500, "lightBlue");
         this.shieldCount--;
+        $("#shieldpurchase").text("buy");
+        $("#shieldpurchase").attr("disabled",false);
+        $("#shield").text("보호막("+(3-this.shieldCount)+"/3)");
     }
 
     processParrying(delta) {
@@ -826,6 +884,12 @@ class Player extends ComponentObject {
 
     playerHurt(dmg) {
         console.log("heart : " + (this.heart -= dmg) + "(-" + dmg + ")");
+        if(this.heart<0){
+            $(".heart").text("0/"+(lifemax*200+1000));
+        }
+        else{
+            $(".heart").text(this.heart+"/"+(lifemax*200+1000));
+        }
         if (this.heart <= 0) {
             this.game.gameEnd("lose");
         }
@@ -1871,7 +1935,6 @@ class Attacks extends ComponentObject {
 
     processCollision(collisionInfo) {
         if (collisionInfo.component instanceof Player && !this.game.player.isHiding) {
-
             if (this.player.shieldCount > 0) {
                 this.player.processShield();
             } else {
