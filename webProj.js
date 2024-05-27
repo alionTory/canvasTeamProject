@@ -8,7 +8,7 @@ let fixedCursorPosition = null;
 // 나중에 상수여야하는 것들은 CONST 붙일것.
 
 PLAYER_HEART = 1000;
-START_COIN = 0;
+START_COIN = 10000;
 PLAYER_SPD = 444;
 BALL_MISS_DMG = 50;
 SHIELD_COOL = 3000;
@@ -78,14 +78,11 @@ function buy_shield() {
         $("#shieldpurchase").attr("disabled", true);
         return;
     }   
-
-
-
 }
 function buy_parryCool() {
-    game.player.parryingToleranceTime = Math.floor((game.player.parryingToleranceTime + 0.2) * 10) / 10;
-    $("#parring").html("패링시간<br>0.2초 증가<br>(현재: " + game.player.parryingToleranceTime + "초)");
-    if (game.player.parryingToleranceTime >= 1) {
+    game.player.parryingToleranceTime = Math.floor((game.player.parryingToleranceTime + 0.05) * 100) / 100;
+    $("#parring").html("패링시간<br>0.05초 증가<br>(현재: " + game.player.parryingToleranceTime + "초)");
+    if (game.player.parryingToleranceTime >= 0.4) {
         $("#parringtime").text("sold out");
         $("#parringtime").attr("disabled", true);
     }
@@ -1329,6 +1326,10 @@ class PlayerBall extends ComponentObject {
     checkBallMissed() {
         if (this.position.y >= this.radius + GAME_HEIGHT) {  // 공 놓침
             this.player.playerHurt(BALL_MISS_DMG);
+            if (this.ball_id instanceof BallSkill_2) {
+                this.ball_id.comboReset();
+            }
+
             this.init();
         }
     }
@@ -1435,6 +1436,8 @@ class BallSkill_2 extends ComponentObject {
     sizeScalar;
     sizseScalarDefault;
     comboDiff;
+    explosionRadiusOrigin;
+    speedOrigin;
 
     constructor(game, playerBall) {
         super(game);
@@ -1444,18 +1447,21 @@ class BallSkill_2 extends ComponentObject {
         this.sizseScalarDefault = 7;
         this.sizeScalar = this.sizseScalarDefault;
         this.comboDiff = 0.85;
+        this.explosionRadiusOrigin = this.playerBall.explosionRadius;
     }
 
     comboUp() {
         this.combo += this.sizeScalar;
         this.sizeScalar *= this.comboDiff;
         this.playerBall.shape = new ShapeCircle(this.playerBall, this.playerBall.position, this.playerBall.radius + this.combo);
+        this.playerBall.explosionRadius = this.explosionRadiusOrigin + this.combo * 0.7;
     }
 
     comboReset() {
         this.combo = 0;
         this.sizeScalar = this.sizseScalarDefault;
         this.playerBall.shape = new ShapeCircle(this.playerBall, this.playerBall.position, this.playerBall.radius);
+        this.playerBall.explosionRadius = this.explosionRadiusOrigin;
     }
 
     update(delta) {
