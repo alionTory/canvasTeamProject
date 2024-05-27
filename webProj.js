@@ -8,10 +8,14 @@ let fixedCursorPosition = null;
 // 나중에 상수여야하는 것들은 CONST 붙일것.
 
 PLAYER_HEART = 1000;
-START_COIN = 10000;
+HIDING_SKILL_PERSIST_TIME = 10;
+START_COIN = 0;
 PLAYER_SPD = 444;
 BALL_MISS_DMG = 50;
-SHIELD_COOL = 3000;
+SHIELD_COOL = 6000;
+
+REGEN_SCALAR = 100;
+MAX_HEALTH_SCALAR = 200;
 
 BOX_PRICE_NORMAL = 30;
 BOX_PRICE_BARRIER = 40;
@@ -24,17 +28,17 @@ WAVE_CALL_BONUS = 100;
 CANNON_COOL = 2000;
 CANNON_ERR = 30;
 CANNON_SPD = 200;
-CANNON_DMG = 10;
+CANNON_DMG = 18;
 
 MACHINEGUN_COOL = 3000;
 MACHINEGUN_ERR = 80;
 MACHINEGUN_SPD = 360;
-MACHINEGUN_DMG = 7;
+MACHINEGUN_DMG = 12;
 
 LAZER_COOL = 11111;
 LAZER_ERR = 0;
 LAZER_SPD = 100;
-LAZER_DMG = 99;
+LAZER_DMG = 200;
 
 MOVE_SPD_PAWN = 5;
 MOVE_SPD_KNIGHT = 5;
@@ -46,7 +50,7 @@ MOVE_SPD_KING = 10;
 BALL_SPD_1 = 400;
 BALL_SPD_2 = 500;
 BALL_SPD_3 = 600;
-BALL_EXPLOTION_RAD = 29;
+BALL_EXPLOTION_RAD = 27;
 
 WAVE_DEFAULT_DIST = 300;
 WAVE_DIST = 1000;
@@ -56,17 +60,17 @@ MAX_LEVEL = 3;
 //상점관련함수/\.........................................................................................
 
 function buy_maxHealth() {
-    game.player.heart += 200;
-    $(".heart").text(game.player.heart + "/" + (lifemax * 200 + 1000));
+    game.player.heart += MAX_HEALTH_SCALAR;
+    $(".heart").text(game.player.heart + "/" + (lifemax * MAX_HEALTH_SCALAR + PLAYER_HEART));
 }
 function buy_regeneration() {
-    if (game.player.heart + 300 > lifemax * 200 + 1000) {
-        game.player.heart = lifemax * 200 + 1000;
+    if (game.player.heart + REGEN_SCALAR > lifemax * MAX_HEALTH_SCALAR + PLAYER_HEART) {
+        game.player.heart = lifemax * MAX_HEALTH_SCALAR + PLAYER_HEART;
     }
     else {
-        game.player.heart += 300;
+        game.player.heart += REGEN_SCALAR;
     }
-    $(".heart").text(game.player.heart + "/" + (lifemax * 200 + 1000));
+    $(".heart").text(game.player.heart + "/" + (lifemax * MAX_HEALTH_SCALAR + PLAYER_HEART));
 }
 function buy_shield() {
     if (game.player.shieldLevel < 3) {
@@ -80,9 +84,9 @@ function buy_shield() {
     }   
 }
 function buy_parryCool() {
-    game.player.parryingToleranceTime = Math.floor((game.player.parryingToleranceTime + 0.05) * 100) / 100;
-    $("#parring").html("패링시간<br>0.05초 증가<br>(현재: " + game.player.parryingToleranceTime + "초)");
-    if (game.player.parryingToleranceTime >= 0.4) {
+    game.player.parryingToleranceTime = Math.floor((game.player.parryingToleranceTime + 0.03) * 100) / 100;
+    $("#parring").html("패링시간<br>0.03초 증가<br>(현재: " + game.player.parryingToleranceTime + "초)");
+    if (game.player.parryingToleranceTime >= 0.3) {
         $("#parringtime").text("sold out");
         $("#parringtime").attr("disabled", true);
     }
@@ -110,6 +114,7 @@ function buy_hidingSkill() {
         $("#stealth").html("은신 기능<br>(0/1)");
         $("#stealthpurchase").text("sold out");
         $("#stealthpurchase").attr("disabled", true);
+        game.player.startHiding();
     }
     else {
         $("#stealth").html("은신 기능<br>(1/1)");
@@ -494,12 +499,13 @@ class Game {
                 this.mobList.push(new Mob_bishop(this, new Vector2(250, 300)));
 
                 this.wave = 20;
-                this.mobList.push(new Mob_rook(this, new Vector2(100, 100)));
-                this.mobList.push(new Mob_rook(this, new Vector2(250, 300)));
-                this.mobList.push(new Mob_rook(this, new Vector2(400, 100)));
-                this.mobList.push(new Mob_rook(this, new Vector2(100, 300)));
-                this.mobList.push(new Mob_rook(this, new Vector2(400, 300)));
-                this.mobList.push(new Mob_rook(this, new Vector2(250, 100)));
+                this.mobList.push(new Mob_bishop(this, new Vector2(100, 100)));
+                this.mobList.push(new Mob_rook(this, new Vector2(250, 400)));
+                this.mobList.push(new Mob_bishop(this, new Vector2(400, 100)));
+                this.mobList.push(new Mob_rook(this, new Vector2(100, 400)));
+                this.mobList.push(new Mob_pawn(this, new Vector2(250, 100)));
+                this.mobList.push(new Mob_rook(this, new Vector2(400, 400)));
+
 
                 this.playBgm("level2_bgm");
                 break;
@@ -871,6 +877,7 @@ class Player extends ComponentObject {
     parryingToleranceTime;  // 충돌 이벤트 전후로 parringToleranceTime / 2 초 동안은 패링으로 쳐줌
     leftParryingPersistTime;
     isHiding;  // 은신 스킬이 활성화 되어있는지
+    leftHidingTime;
     shieldCount;
     shield;
     isBroken;  // 게임 오버되어 플레이어 캐릭터가 부서졌는가
@@ -905,12 +912,18 @@ class Player extends ComponentObject {
     init() {
         this.heart = PLAYER_HEART;
         this.isHiding = false;
+        this.leftHidingTime = 0;
         this.shieldCount = 0;
         this.isBroken = false;
         this.leftTimeForNextParrying = 0;
         this.isParrying = false;
-        this.parryingToleranceTime = 0.2;
+        this.parryingToleranceTime = 0.18;
         this.leftParryingPersistTime = 0;
+    }
+
+    startHiding() {
+        this.isHiding = true;
+        this.leftHidingTime = HIDING_SKILL_PERSIST_TIME;
     }
 
     processInput() {
@@ -935,6 +948,11 @@ class Player extends ComponentObject {
 
     update(delta) {
         if (this.game.state == "gameover") return;
+        if (this.isHiding && this.game.mobList.length != 0) {
+            this.leftHidingTime -= delta;
+            if (this.leftHidingTime <= 0)
+                this.isHiding = false;
+        }
         this.processParrying(delta);
         super.update(delta);
     }
@@ -1498,8 +1516,6 @@ class PlayerBallExplosion extends ComponentObject {
         this.shape = new ShapeCircle(this, this.position, this.radius);
         this.checkCollisionAtConstruct();
 
-        //new Anime_circleAct(this.game, this, 0, 700, "green");
-        console.log(this.game.player.explosionRadius);
         new Anime_circleAct(this.game, this, 0, this.game.playerBall.explosionRadius * 22, "green");
     }
 
@@ -1631,6 +1647,7 @@ class Box extends ComponentObject {
             this.destroyBox();
         }
         else if (collisionInfo.component instanceof PlayerBallExplosion && !(this instanceof CoreBox)) {
+            this.playCollisionSound();
             this.destroyBox();
         }
     }
@@ -1700,6 +1717,9 @@ class CoreBox extends Box {
 
         if (coreBroken) {
             super.destroyBox();
+            
+            // 레벨 올릴지 검사
+            this.game.checkLevelUp();
             return;
         }
 
@@ -1905,11 +1925,20 @@ class Mob extends ComponentObject {
     }
 
     removeMobHard() {
+        let mobListIndex = this.game.mobList.indexOf(this);
+        if (mobListIndex != -1)
+            this.game.mobList.splice(mobListIndex, 1);
+        else {
+            console.error("destroyBox() : 맵의 끝에 도달한 몹에 오류가 있습니다.")
+            console.trace();
+        }
+
         for (let box of this.boxList) {
             this.game.removeComponent(box);
         }
         this.game.removeComponent(this);
         this.game.doRemoval();
+
         this.game.checkLevelUp();
     }
 
