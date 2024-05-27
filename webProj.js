@@ -249,18 +249,6 @@ class Game {
         this.buttons["pause-mainmenu"].isActive = false;
     }
 
-    pauseGame() {
-        this.state = "paused";
-        this.buttons["pause-resume"].isActive = true;
-        this.buttons["pause-mainmenu"].isActive = true;
-    }
-
-    resumeGame() {
-        this.state = "game";
-        this.buttons["pause-resume"].isActive = false;
-        this.buttons["pause-mainmenu"].isActive = false;
-    }
-
     processInput() {
         if (this.state == "game") {
             this.player.processInput();
