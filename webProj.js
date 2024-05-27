@@ -172,6 +172,12 @@ $(function () {
     game = new Game(gameCanvas[0].getContext("2d"));
 
     shopReady();
+    $("#volumeSlider").on('input',function(){
+        const volume=$(this).val();
+        level1_bgm.volume=volume;
+        level2_bgm.volume=volume;
+        level3_bgm.volume=volume;
+    });
 });
 
 $(document).on("keydown", function (event) {
