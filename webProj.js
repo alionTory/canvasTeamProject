@@ -247,7 +247,6 @@ class Game {
         this.collideablesWithBall = [];
         this.buttons = {};
         this.loadComponents();
-        this.startCountdown=this.startCountdown.bind(this);
         //setInterval(this.runLoop.bind(this), this.delta * 1000);
         requestAnimationFrame(this.runLoop.bind(this));
 
@@ -264,19 +263,11 @@ class Game {
         new Anime_background(this);
 
         let pauseScreenResumeButton = new Button(this, new Vector2(GAME_WIDTH / 2, GAME_HEIGHT / 2 - 50), 130, 50, "resume");
-        pauseScreenResumeButton.setEventHandler(function () {             
-            this.hidePauseScreenButtons();
-            this.startCountdown(() => {
-                this.state = "game";
-            });
-        }.bind(this));
+        pauseScreenResumeButton.setEventHandler(function () { this.game.resumeGame(); });
         this.buttons["pause-resume"] = pauseScreenResumeButton;
 
         let pauseScreenMainmenuButton = new Button(this, new Vector2(GAME_WIDTH / 2, GAME_HEIGHT / 2 + 50), 130, 50, "main menu");
-        pauseScreenMainmenuButton.setEventHandler(function () {  
-            this.hidePauseScreenButtons();
-            this.startMainMenu();
-         }.bind(this));
+        pauseScreenMainmenuButton.setEventHandler(function () { this.game.startMainMenu(); });
         this.buttons["pause-mainmenu"] = pauseScreenMainmenuButton;
 
         let gameEndMainmenuButton = new Button(this, new Vector2(GAME_WIDTH / 2, GAME_HEIGHT / 2 + 50), 130, 50, "main menu");
@@ -311,8 +302,6 @@ class Game {
         this.state = "paused";
         this.buttons["pause-resume"].isActive = true;
         this.buttons["pause-mainmenu"].isActive = true;
-        this.buttons["pause-resume"].visible = true;
-        this.buttons["pause-mainmenu"].visible = true;
         $("#game-canvas").removeClass("hide_cursor");
     }
 
@@ -326,16 +315,12 @@ class Game {
     processInput() {
         if (this.state == "game") {
             this.player.processInput();
-            if (gameInput.esc){
+            if (gameInput.esc)
                 this.pauseGame();
-            }
         }
         else if (this.state == "paused") {
-            if (gameInput.esc){
-                this.startCountdown(() => {
-                    this.resumeGame();
-                });
-            }
+            if (gameInput.esc)
+                this.resumeGame();
         }
         for (let key in this.buttons) {
             this.buttons[key].processInput();
@@ -652,49 +637,6 @@ class Game {
                 break;
         }
     }
-    startCountdown(callback) {
-        for (let key in this.buttons) {
-            this.buttons[key].visible = false;
-        }
-
-        let countdown = 3;
-        const countdownElement = document.createElement('div');
-        countdownElement.id = 'countdown';
-
-        const gameCanvas = document.getElementById("game-canvas");
-        const canvasRect = gameCanvas.getBoundingClientRect();
-
-        countdownElement.style.position = 'absolute';
-        countdownElement.style.top = `${canvasRect.top + canvasRect.height / 2}px`;
-        countdownElement.style.left = `${canvasRect.left + canvasRect.width / 2}px`;
-        countdownElement.style.transform = 'translate(-50%, -50%)';
-        countdownElement.style.color = 'white';
-        countdownElement.style.fontSize = '80px';
-        countdownElement.style.zIndex = '1000';
-        countdownElement.innerHTML = countdown;
-        document.body.appendChild(countdownElement);
-
-        const interval = setInterval(() => {
-            countdown--;
-            if (countdown > 0) {
-                countdownElement.innerHTML = countdown;
-            } else {
-                clearInterval(interval);
-                document.body.removeChild(countdownElement);
-                callback();
-            }
-        }, 1000);
-    }
-    showPauseScreenButtons() {
-            this.buttons["pause-resume"].visible=true;
-            this.buttons["pause-mainmenu"].visible=true; 
-    }
-
-    hidePauseScreenButtons() {
-            this.buttons["pause-resume"].visible=false;
-            this.buttons["pause-mainmenu"].visible=false;
-    }
-
 }
 
 class Component {
@@ -774,7 +716,6 @@ class Button extends Component {
     hover;
     eventHandler;
     isActive;
-    visible;
 
     constructor(game, position, width, height, text) {
         super(game, 101);
@@ -786,7 +727,6 @@ class Button extends Component {
         this.hover = false;
         this.eventHandler = null;
         this.isActive = false;
-        this.visible=false;
     }
 
     setEventHandler(eventHandler) {
@@ -794,7 +734,7 @@ class Button extends Component {
     }
 
     processInput() {
-        if (!this.isActive||!this.visible)
+        if (!this.isActive)
             return;
 
         if (this.position.x - this.width / 2 <= cursorPosition.x && cursorPosition.x <= this.position.x + this.width / 2
@@ -809,7 +749,7 @@ class Button extends Component {
     }
 
     draw(ctx) {
-        if (!this.visible)
+        if (!this.isActive)
             return;
 
         ctx.save();
