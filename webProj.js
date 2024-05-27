@@ -690,13 +690,21 @@ class Button extends Component {
 
         ctx.save();
 
-        if (this.hover)
-            ctx.fillStyle = "red";
+        if (this.hover){
+            ctx.fillStyle = "black";
+            ctx.strokeStyle="white"
+            ctx.lineWidth=5;
+            ctx.strokeRect(this.position.x - this.width / 2, this.position.y - this.height / 2, this.width, this.height)
+        }
         else
-            ctx.fillStyle = "blue";
+            ctx.fillStyle = "lightgray";
         ctx.fillRect(this.position.x - this.width / 2, this.position.y - this.height / 2, this.width, this.height);
 
-        ctx.fillStyle = "black";
+
+        if (this.hover)
+            ctx.fillStyle = "white";
+        else
+            ctx.fillStyle = "black";
         ctx.font = "20px Silkscreen";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
