@@ -7,7 +7,7 @@ let fixedCursorPosition = null;
 // 밸런스 전역변수들.......................................................................................................
 // 나중에 상수여야하는 것들은 CONST 붙일것.
 
-PLAYER_HEART = 1000;
+PLAYER_HEART = 100;
 START_COIN = 10000;
 PLAYER_SPD = 444;
 BALL_MISS_DMG = 50;
@@ -786,6 +786,7 @@ class Message extends Component {
         super(game);
         this.text = text;
         this.position = position;
+        this.drawOrder = 101;
     }
 
     draw(ctx) {
@@ -808,6 +809,7 @@ class VariableMessage extends Component {
         super(game);
         this.getMessage = getMessage;
         this.position = position;
+        this.drawOrder = 101;
     }
 
     draw(ctx) {
