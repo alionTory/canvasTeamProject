@@ -168,13 +168,6 @@ $(function () {
     });
 
     game = new Game(gameCanvas[0].getContext("2d"));
-
-    $(gameCanvas).hover(
-        function () {
-            gameCanvas.addClass("hide_cursor");
-        }, function () {
-            gameCanvas.removeClass("hide_cursor");
-        });
 });
 
 $(document).on("keydown", function (event) {
@@ -283,7 +276,6 @@ class Game {
         $("#game-section").hide();
         $("#main-menu-section").show();
         this.stopBgm();
-        this.updateCursorVisibility();
     }
 
     startGame(level) {
@@ -292,19 +284,20 @@ class Game {
         $("#main-menu-section").hide();
         $("#game-section").show();
         this.levelStarter(level);
-        this.updateCursorVisibility();
     }
 
     pauseGame() {
         this.state = "paused";
         this.buttons["pause-resume"].isActive = true;
         this.buttons["pause-mainmenu"].isActive = true;
+        $("#game-canvas").removeClass("hide_cursor");
     }
 
     resumeGame() {
         this.state = "game";
         this.buttons["pause-resume"].isActive = false;
         this.buttons["pause-mainmenu"].isActive = false;
+        $("#game-canvas").addClass("hide_cursor");
     }
 
     processInput() {
@@ -312,12 +305,10 @@ class Game {
             this.player.processInput();
             if (gameInput.esc)
                 this.pauseGame();
-            this.updateCursorVisibility();
         }
         else if (this.state == "paused") {
             if (gameInput.esc)
                 this.resumeGame();
-            this.updateCursorVisibility();
         }
         for (let key in this.buttons) {
             this.buttons[key].processInput();
@@ -409,6 +400,8 @@ class Game {
         for (let key in this.buttons) {
             this.buttons[key].isActive = false;
         }
+
+        $("#game-canvas").addClass("hide_cursor");
 
         //플레이어 상태 초기화
         this.player.position.x = GAME_WIDTH / 2;
@@ -579,18 +572,18 @@ class Game {
 
     selectBall(ballNum) {
         this.playerBall.removeSkill();
-    switch(ballNum) {
-        case 0: 
-            this.playerBall.ball_id = null;
-            break;
-        case 1:
-            this.playerBall.ball_id = new BallSkill_1(this, this.playerBall);
-            break;
-        case 2:
-            this.playerBall.ball_id = new BallSkill_2(this, this.playerBall);
-            break;
+        switch (ballNum) {
+            case 0:
+                this.playerBall.ball_id = null;
+                break;
+            case 1:
+                this.playerBall.ball_id = new BallSkill_1(this, this.playerBall);
+                break;
+            case 2:
+                this.playerBall.ball_id = new BallSkill_2(this, this.playerBall);
+                break;
+        }
     }
-}
 
     gameEnd(winLose) {
         switch (winLose) {
@@ -604,6 +597,7 @@ class Game {
                     this.removeComponent(clearText);
                     new VariableMessage(this, function () { return "SCORE : " + this.game.score; }, new Vector2(GAME_WIDTH / 2, GAME_HEIGHT / 2 - 70));
                     this.buttons["gameend-mainmenu"].isActive = true;
+                    $("#game-canvas").removeClass("hide_cursor");
                 }, 5000);
                 break;
 
@@ -619,6 +613,7 @@ class Game {
                     this.removeComponent(gameOverText);
                     new VariableMessage(this, function () { return "SCORE : " + this.game.score; }, new Vector2(GAME_WIDTH / 2, GAME_HEIGHT / 2 - 70));
                     this.buttons["gameend-mainmenu"].isActive = true;
+                    $("#game-canvas").removeClass("hide_cursor");
                 }, 5000)
                 new Anime_BrokenPlayer(this, this.player);
 
@@ -630,16 +625,6 @@ class Game {
                 break;
         }
     }
-
-    updateCursorVisibility() {
-        const gameCanvas = $("#game-canvas");
-        if (this.state === "game") {
-            gameCanvas.addClass("hide_cursor");
-        } else {
-            gameCanvas.removeClass("hide_cursor");
-        }
-    }
-    
 }
 
 class Component {
@@ -757,10 +742,10 @@ class Button extends Component {
 
         ctx.save();
 
-        if (this.hover){
+        if (this.hover) {
             ctx.fillStyle = "black";
-            ctx.strokeStyle="white"
-            ctx.lineWidth=5;
+            ctx.strokeStyle = "white"
+            ctx.lineWidth = 5;
             ctx.strokeRect(this.position.x - this.width / 2, this.position.y - this.height / 2, this.width, this.height)
         }
         else
@@ -1065,7 +1050,7 @@ class PlayerBall extends ComponentObject {
         this.launchSpeedList = [BALL_SPD_1, BALL_SPD_2, BALL_SPD_3];
         this.launchSpeed = this.launchSpeedList[0];
         this.ball_id = null;
-        
+
         this.init();
     }
 
@@ -1299,7 +1284,7 @@ class PlayerBall extends ComponentObject {
 }
 
 //위성
-class BallSkill_1 extends ComponentObject{
+class BallSkill_1 extends ComponentObject {
     playerBall;
     theta;
     orbitRad;
@@ -1330,7 +1315,7 @@ class BallSkill_1 extends ComponentObject{
     }
 
     update(delta) {
-        this.position = new Vector2(this.playerBall.position.x + Math.sin(this.theta) * this.orbitRad,this.playerBall.position.y + Math.cos(this.theta) * this.orbitRad)
+        this.position = new Vector2(this.playerBall.position.x + Math.sin(this.theta) * this.orbitRad, this.playerBall.position.y + Math.cos(this.theta) * this.orbitRad)
         super.update(delta);
         this.updateShape();
         this.theta += 6 * Math.PI / 180 * this.clockwise;
@@ -1367,7 +1352,7 @@ class BallSkill_1 extends ComponentObject{
 }
 
 //판정 강화
-class BallSkill_2 extends ComponentObject{
+class BallSkill_2 extends ComponentObject {
     playerBall;
     combo;
     sizeScalar;
