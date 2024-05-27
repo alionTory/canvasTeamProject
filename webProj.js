@@ -434,7 +434,6 @@ class Game {
         this.currentBgm.currentTime = 0;
         this.currentBgm.loop = true;
         this.currentBgm.play();
-        console.log(this.currentBgm);
     }
 
     stopBgm() {
