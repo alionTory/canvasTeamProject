@@ -8,7 +8,8 @@ let fixedCursorPosition = null;
 // 나중에 상수여야하는 것들은 CONST 붙일것.
 
 PLAYER_HEART = 1000;
-START_COIN = 10000;
+HIDING_SKILL_PERSIST_TIME = 15;
+START_COIN = 0;
 PLAYER_SPD = 444;
 BALL_MISS_DMG = 50;
 
@@ -106,6 +107,7 @@ function buy_hidingSkill() {
         $("#stealth").html("은신 기능<br>(0/1)");
         $("#stealthpurchase").text("sold out");
         $("#stealthpurchase").attr("disabled", true);
+        game.player.startHiding();
     }
     else {
         $("#stealth").html("은신 기능<br>(1/1)");
@@ -867,6 +869,7 @@ class Player extends ComponentObject {
     parryingToleranceTime;  // 충돌 이벤트 전후로 parringToleranceTime / 2 초 동안은 패링으로 쳐줌
     leftParryingPersistTime;
     isHiding;  // 은신 스킬이 활성화 되어있는지
+    leftHidingTime;
     shieldCount;
     shield;
     isBroken;  // 게임 오버되어 플레이어 캐릭터가 부서졌는가
@@ -893,12 +896,18 @@ class Player extends ComponentObject {
     init() {
         this.heart = PLAYER_HEART;
         this.isHiding = false;
+        this.leftHidingTime = 0;
         this.shieldCount = 0;
         this.isBroken = false;
         this.leftTimeForNextParrying = 0;
         this.isParrying = false;
         this.parryingToleranceTime = 0.2;
         this.leftParryingPersistTime = 0;
+    }
+
+    startHiding() {
+        this.isHiding = true;
+        this.leftHidingTime = HIDING_SKILL_PERSIST_TIME;
     }
 
     processInput() {
@@ -923,6 +932,11 @@ class Player extends ComponentObject {
 
     update(delta) {
         if (this.game.state == "gameover") return;
+        if (this.isHiding && this.game.mobList.length != 0) {
+            this.leftHidingTime -= delta;
+            if (this.leftHidingTime <= 0)
+                this.isHiding = false;
+        }
         this.processParrying(delta);
         super.update(delta);
     }
