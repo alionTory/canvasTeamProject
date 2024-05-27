@@ -6,9 +6,9 @@ let fixedCursorPosition = null;
 
 // 밸런스 전역변수들.......................................................................................................
 // 나중에 상수여야하는 것들은 CONST 붙일것.
-STARTLEVEL = 1;
 
 PLAYER_HEART = 1000;
+START_COIN = 0;
 PLAYER_SPD = 444;
 BALL_MISS_DMG = 50;
 
@@ -51,6 +51,8 @@ WAVE_DEFAULT_DIST = 300;
 WAVE_DIST = 1000;
 
 MAX_LEVEL = 3;
+
+//상점관련함수/\.........................................................................................
 
 function buy_maxHealth() {
     game.player.heart+=200;
@@ -110,7 +112,7 @@ function buy_hidingSkill() {
     }
 }
 
-// .......................................................................................................................
+// 이미지........................................................................................................................
 var img_normalBox = new Image(); img_normalBox.src = "imgFolder/normalBox.png";
 var img_cannonBox = new Image(); img_cannonBox.src = "imgFolder/cannonBox.png";
 var img_machinegunBox = new Image(); img_machinegunBox.src = "imgFolder/machinegunBox.png";
@@ -145,14 +147,14 @@ var img_fireL2 = new Image(); img_fireL2.src = "imgFolder/fireL2.png";
 var img_fireD = new Image(); img_fireD.src = "imgFolder/fireD.png";
 var img_fireD2 = new Image(); img_fireD2.src = "imgFolder/fireD2.png";
 
-// 배경음악
+// 배경음악/...........................................................
 const level1_bgm = new Audio("soundFolder/game1.mp3");
 const level2_bgm = new Audio("soundFolder/game2.mp3");
 const level3_bgm = new Audio("soundFolder/game3.mp3");
 
 let game = null;
 
-// jquery 공식 문서에서는 $(document).ready() 대신 $(function() {})을 사용하도록 권장함.
+//온로드...................................................................
 $(function () {
     const gameCanvas = $("#game-canvas");
     const infCanvas = $("#inf-canvas");
@@ -168,6 +170,8 @@ $(function () {
     });
 
     game = new Game(gameCanvas[0].getContext("2d"));
+
+    shopReady();
 });
 
 $(document).on("keydown", function (event) {
@@ -229,7 +233,7 @@ class Game {
     buttons;
 
     constructor(ctx) {
-        this.level = STARTLEVEL; // 임시
+        this.level = 1; // 임시
         this.startMainMenu();
         this.currentBgm = null;
 
@@ -246,7 +250,7 @@ class Game {
         //setInterval(this.runLoop.bind(this), this.delta * 1000);
         requestAnimationFrame(this.runLoop.bind(this));
 
-        this.coin = 10000;
+        this.coin = START_COIN;
         this.score = 0;
 
         this.nextWaveInfo = new NextWaveInfo(this);
@@ -276,6 +280,14 @@ class Game {
         $("#game-section").hide();
         $("#main-menu-section").show();
         this.stopBgm();
+
+        this.coin = START_COIN;
+        this.heart = PLAYER_HEART;
+        this.score = 0;
+
+        $(".heart").text(PLAYER_HEART + "/" + PLAYER_HEART);
+        $(".money").text(START_COIN + "g");
+        $(".score").text("score:" + 0);
     }
 
     startGame(level) {
@@ -1414,6 +1426,10 @@ class PlayerBallExplosion extends ComponentObject {
         this.leftExplosionTime = 1;
         this.shape = new ShapeCircle(this, this.position, this.radius);
         this.checkCollisionAtConstruct();
+
+        //new Anime_circleAct(this.game, this, 0, 700, "green");
+        console.log(this.game.player.explosionRadius);
+        new Anime_circleAct(this.game, this, 0, this.game.playerBall.explosionRadius * 22, "green");
     }
 
     // 생성될 때 한 번만 충돌 처리.

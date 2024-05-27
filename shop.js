@@ -2,7 +2,8 @@ var ball="playerBall";
 var lifemax=0;
 var explosionrange=0;
 
-$(document).ready(function(){
+function shopReady(){
+    
     $(".bullet").text("selected");
     $(".bullet").attr("disabled",true);
     $(".bullet").click(function(){
@@ -96,7 +97,7 @@ $(document).ready(function(){
             $(".money").text(game.coin+"g");
         }
     })
-})
+}
 
 function soldout(par){
     for(var i=1; i<=4; i++){
