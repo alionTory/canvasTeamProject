@@ -220,7 +220,7 @@ class Game {
         $("#game-section").hide();
         $("#main-menu-section").show();
         this.stopBgm();
-    }
+        }
 
     startGame(level) {
         this.state = "game";
@@ -275,15 +275,31 @@ class Game {
             this.ctx.textBaseline = "middle";
             this.ctx.fillText("LEVEL UP!", GAME_WIDTH / 2, GAME_HEIGHT / 2);
         }
-
+        
         if (this.clearTextActive) {
             this.ctx.fillStyle = "white";
             this.ctx.font = "50px Silkscreen";
             this.ctx.textAlign = "center";
             this.ctx.textBaseline = "middle";
-            this.ctx.fillText("GAME CLEAR", GAME_WIDTH / 2, GAME_HEIGHT / 2);
+            this.ctx.fillText("GAME CLEAR!" , GAME_WIDTH / 2, GAME_HEIGHT / 2);
         }
-    }
+        if(this.overTextActive){
+            this.ctx.fillStyle="white";
+            this.ctx.font="50px Silkscreen";
+            this.ctx.textAlign = "center";
+            this.ctx.textBaseline = "middle";
+            this.ctx.fillText("GAME OVER",GAME_WIDTH/2,GAME_HEIGHT/2);
+            
+        }
+        if(this.scoreTextActive){
+            this.ctx.fillStyle="white";
+            this.ctx.font="50px Silkscreen";
+            this.ctx.textAlign = "center";
+            this.ctx.textBaseline = "middle";
+            this.ctx.fillText("SCORE : "+this.score, GAME_WIDTH/2, GAME_HEIGHT/2-70);
+        }
+    }  
+
     runLoop(timestamp) {
         requestAnimationFrame(this.runLoop.bind(this));
         if (this.state != "main-menu") {
@@ -384,7 +400,7 @@ class Game {
                 this.mobList.push(new Mob_pawn(this, new Vector2(450, 100)));
                 this.mobList.push(new Mob_pawn(this, new Vector2(450, 200)));
                 this.mobList.push(new Mob_bishop(this, new Vector2(250, 80)));
-
+                
                 this.playBgm("level1_bgm");
                 break;
 
@@ -396,21 +412,21 @@ class Game {
                 this.mobList.push(new Mob_rook(this, new Vector2(100, 300)));
                 this.mobList.push(new Mob_rook(this, new Vector2(400, 300)));
                 this.mobList.push(new Mob_bishop(this, new Vector2(250, 100)));
-
+                
                 this.playBgm("level2_bgm");
                 break;
 
             case 3:
                 this.wave = 0;
                 this.mobList.push(new Mob_qween(this, new Vector2(250, -650)));
-
+                
                 this.playBgm("level3_bgm");
                 break;
 
             default:
                 console.err("잘못된 레벨...");
         }
-
+        
     }
 
     playBgm(bgmName) {
@@ -509,18 +525,29 @@ class Game {
                 console.log("win");
                 this.clearTextActive = true;
                 this.atkClear();
-
+            
                 setTimeout(() => {
                     this.clearTextActive = false;
+                    this.scoreTextActive = true;
+                    this.state = "stopped";
+                    this.addMainMenuButton();
                 }, 5000);
                 break;
 
             case "lose":
                 console.log("lose");
+                this.overTextActive = true;
+                setTimeout(() => {
+                    this.overTextActive = false;
+                    this.scoreTextActive = true;
+                    this.state="stopped";
+                    this.addMainMenuButton();
+                }, 5000)
+                this.overTextActive = true;
                 new Anime_BrokenPlayer(this, this.player);
                 this.removeComponent(this.playerBall);
                 this.removeComponent(this.PlayerLaunchAngleArrow);
-
+  
                 Box.attackAble = false;
                 for (let mob of this.mobList) {
                     mob.leastSpeed = new Vector2(0, 100);
@@ -1268,7 +1295,7 @@ class Box extends ComponentObject {
             this.destroyBox();
         }
     }
-
+    
     playCollisionSound() {
         let crash_mp3 = new Audio("soundFolder/crash.mp3");
         crash_mp3.play();
@@ -1357,7 +1384,7 @@ class CoreBox extends Box {
 
         this.destroyed = true;
     }
-
+    
     playCollisionSound() {
         let coreexplosion_mp3 = new Audio("soundFolder/coreexplosion.mp3");
         coreexplosion_mp3.play();
@@ -1936,7 +1963,7 @@ class Anime_explode extends Anime {
     where;
     errX;
     errY;
-
+    
     constructor(game, size, spd, where, errX, errY) {
         super(game);
         this.size = size;
