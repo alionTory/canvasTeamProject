@@ -53,47 +53,6 @@ WAVE_DIST = 1000;
 MAX_LEVEL = 3;
 
 // .......................................................................................................................
-// 상점과의 상호작용.......................................................................................................
-function buy_ball() {
-
-}
-function selectBall(game,playerBall, ballNum) {
-        playerBall.removeSkill();
-    switch(ballNum) {
-        case 0: 
-            playerBall.ball_id = null;
-            break;
-        case 1:
-            playerBall.ball_id = new BallSkill_1(game, playerBall);
-            break;
-        case 2:
-            playerBall.ball_id = new BallSkill_2(game, playerBall);
-            break;
-    }
-}
-function buy_maxHealth() {
-
-}
-function buy_regeneration() {
-
-}
-function buy_shield() {
-
-}
-function buy_parryCool() {
-
-}
-function buy_explodeUp() {
-
-}
-function buy_reloadCool() {
-
-}
-function buy_hidingSkill() {
-
-}
-// .......................................................................................................................
-
 var img_normalBox = new Image(); img_normalBox.src = "imgFolder/normalBox.png";
 var img_cannonBox = new Image(); img_cannonBox.src = "imgFolder/cannonBox.png";
 var img_machinegunBox = new Image(); img_machinegunBox.src = "imgFolder/machinegunBox.png";
@@ -569,6 +528,21 @@ class Game {
     addScore(toAddScore) {
         console.log("score : " + (this.score += 10 * toAddScore) + "(+" + 10 * toAddScore + ")");
     }
+
+    selectBall(ballNum) {
+        this.playerBall.removeSkill();
+    switch(ballNum) {
+        case 0: 
+            this.playerBall.ball_id = null;
+            break;
+        case 1:
+            this.playerBall.ball_id = new BallSkill_1(this, this.playerBall);
+            break;
+        case 2:
+            this.playerBall.ball_id = new BallSkill_2(this, this.playerBall);
+            break;
+    }
+}
 
     gameEnd(winLose) {
         switch (winLose) {

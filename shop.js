@@ -23,6 +23,7 @@ $(document).ready(function(){
             }
             $(this).text("selected");
             $(this).attr("disabled",true);
+            game.selectBall(0);
         }
     })
     $(".cannon").click(function(){
@@ -42,6 +43,7 @@ $(document).ready(function(){
             
             $(this).text("selected");
             $(this).attr("disabled",true);
+            game.selectBall(1);
         }
     })
     $(".lazer").click(function(){
@@ -61,6 +63,7 @@ $(document).ready(function(){
             
             $(this).text("selected");
             $(this).attr("disabled",true);
+            game.selectBall(2);
         }
     })
     $("#lifeaddition").click(function(){
