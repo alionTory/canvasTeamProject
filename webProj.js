@@ -7,8 +7,8 @@ let fixedCursorPosition = null;
 // 밸런스 전역변수들.......................................................................................................
 // 나중에 상수여야하는 것들은 CONST 붙일것.
 
-PLAYER_HEART = 10;
-START_COIN = 0;
+PLAYER_HEART = 1000;
+START_COIN = 10000;
 PLAYER_SPD = 444;
 BALL_MISS_DMG = 50;
 
@@ -301,6 +301,7 @@ class Game {
         this.level = level;
         $("#main-menu-section").hide();
         $("#game-section").show();
+        this.player.init();
         this.levelStarter(level);
     }
 
@@ -877,23 +878,27 @@ class Player extends ComponentObject {
         this.maxSpeed = PLAYER_SPD;
         this.launchDirection = new Vector2(0, -1);
         this.radianLimit = Math.PI / 6;
-        this.heart = PLAYER_HEART;
-        this.isHiding = false;
-        this.shieldCount = 3;
-        this.isBroken = false;
+        this.init();
 
         this.shield = new PlayerShield(this.game, this);
 
         // 공 패링 관련
         this.parryingCoolTime = 0.5;
-        this.leftTimeForNextParrying = 0;
-        this.isParrying = false;
-        this.parryingToleranceTime = 0.2;
-        this.leftParryingPersistTime = 0;
 
         this.position.set(GAME_WIDTH / 2, GAME_HEIGHT - this.height / 2 - 10);
         this.shape = new ShapeAABB(this, new Vector2(), new Vector2());
         game.collideablesWithBall.push(this);
+    }
+
+    init() {
+        this.heart = PLAYER_HEART;
+        this.isHiding = false;
+        this.shieldCount = 0;
+        this.isBroken = false;
+        this.leftTimeForNextParrying = 0;
+        this.isParrying = false;
+        this.parryingToleranceTime = 0.2;
+        this.leftParryingPersistTime = 0;
     }
 
     processInput() {
