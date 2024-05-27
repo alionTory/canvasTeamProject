@@ -220,6 +220,7 @@ class Game {
         $("#game-section").hide();
         $("#main-menu-section").show();
         this.stopBgm();
+        this.updateCursorVisibility();
         }
 
     startGame(level) {
@@ -228,6 +229,7 @@ class Game {
         $("#main-menu-section").hide();
         $("#game-section").show();
         this.levelStarter(level);
+        this.updateCursorVisibility();
     }
 
     processInput() {
@@ -235,10 +237,12 @@ class Game {
             this.player.processInput();
             if (gameInput.esc)
                 this.state = "paused";
+            this.updateCursorVisibility();
         }
         else if (this.state == "paused") {
             for (let button of this.pauseScreenButtons) {
                 button.processInput();
+                this.updateCursorVisibility();
             }
             if (gameInput.esc)
                 this.state = "game";
@@ -560,6 +564,16 @@ class Game {
                 break;
         }
     }
+
+    updateCursorVisibility() {
+        const gameCanvas = $("#game-canvas");
+        if (this.state === "game") {
+            gameCanvas.addClass("hide_cursor");
+        } else {
+            gameCanvas.removeClass("hide_cursor");
+        }
+    }
+    
 }
 
 class Component {
