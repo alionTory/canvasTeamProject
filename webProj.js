@@ -172,6 +172,12 @@ $(function () {
     game = new Game(gameCanvas[0].getContext("2d"));
 
     shopReady();
+    $("#volumeSlider").on('input',function(){
+        const volume=$(this).val();
+        level1_bgm.volume=volume;
+        level2_bgm.volume=volume;
+        level3_bgm.volume=volume;
+    });
 });
 
 $(document).on("keydown", function (event) {
@@ -782,12 +788,10 @@ class ComponentObject extends Component {
 
     static checkCollision(object1, object2) {
         if (object1.shape instanceof ShapeCircle) {
-            if (object2.shape instanceof ShapeAABB) {
-                let collisionInfo = object1.shape.getCollisionInfo(object2.shape);
-                if (collisionInfo[0].isCollided) {
-                    object2.processCollision(collisionInfo[1]);
-                    object1.processCollision(collisionInfo[0]);
-                }
+            let collisionInfo = object1.shape.getCollisionInfo(object2.shape);
+            if (collisionInfo[0].isCollided) {
+                object2.processCollision(collisionInfo[1]);
+                object1.processCollision(collisionInfo[0]);
             }
         }
     }
@@ -2165,6 +2169,7 @@ class Attacks extends ComponentObject {
     damage;
     angleError;
     err;
+    isParried;
 
     constructor(game, box, radius, spdScalar, damage, err) {
         super(game);
@@ -2176,6 +2181,7 @@ class Attacks extends ComponentObject {
         this.position = Vector2.copy(this.box.position);
         this.err = err;
         this.angleError = Math.random() * this.err - 0.5 * err;
+        this.isParried = false;
 
         this.newSpeed = new Vector2((this.player.position.x - this.box.position.x + this.angleError), (this.player.position.y - this.box.position.y)).nomalize();
         this.speed = this.newSpeed.multiply(this.spdScalar);
@@ -2183,6 +2189,8 @@ class Attacks extends ComponentObject {
         this.shape = new ShapeCircle(this, this.position, this.radius);
 
         this.drawOrder = 55;
+
+        this.game.collideablesWithBall.push(this);
     }
 
     update(delta) {
@@ -2201,18 +2209,29 @@ class Attacks extends ComponentObject {
     }
 
     processCollision(collisionInfo) {
-        if (collisionInfo.component instanceof Player && !this.game.player.isHiding) {
-
-            if (this.player.shieldCount > 0) {
-                this.player.processShield();
-            } else {
+        if (!this.isParried) {
+            if (collisionInfo.component instanceof Player) {
+                if (this.game.player.isParrying)
+                    this.parriedByPlayer();
+                else if (!this.game.player.isHiding) {
+                    if (this.player.shieldCount > 0) {
+                        this.player.processShield();
+                    } else {
+                        this.game.player.playerHurt(this.damage);
+                    }
+                    new Anime_explode(this.game, this.radius * 5, 0.02, this, 0, 0);
+                    this.game.removeComponent(this);
+                }
+            } else if (collisionInfo.component instanceof PlayerBall) {
                 new Anime_explode(this.game, this.radius * 5, 0.02, this, 0, 0);
-                this.game.player.playerHurt(this.damage);
+                this.game.removeComponent(this);
             }
-            this.game.removeComponent(this);
-
-
         }
+    }
+
+    parriedByPlayer() {
+        this.isParried = true;
+        this.speed.y *= -1;
     }
 }
 
