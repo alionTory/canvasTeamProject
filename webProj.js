@@ -8,7 +8,7 @@ let fixedCursorPosition = null;
 // 나중에 상수여야하는 것들은 CONST 붙일것.
 
 PLAYER_HEART = 1000;
-START_COIN = 10000;
+START_COIN = 0;
 PLAYER_SPD = 444;
 BALL_MISS_DMG = 50;
 
@@ -473,6 +473,22 @@ class Game {
                 this.mobList.push(new Mob_rook(this, new Vector2(100, 300)));
                 this.mobList.push(new Mob_rook(this, new Vector2(400, 300)));
                 this.mobList.push(new Mob_bishop(this, new Vector2(250, 100)));
+
+                this.wave = 10;
+                this.mobList.push(new Mob_knight(this, new Vector2(50, 300)));
+                this.mobList.push(new Mob_knight(this, new Vector2(250, 100)));
+                this.mobList.push(new Mob_knight(this, new Vector2(450, 300)));
+                this.mobList.push(new Mob_rook(this, new Vector2(100, 100)));
+                this.mobList.push(new Mob_rook(this, new Vector2(400, 100)));
+                this.mobList.push(new Mob_bishop(this, new Vector2(250, 300)));
+
+                this.wave = 20;
+                this.mobList.push(new Mob_rook(this, new Vector2(100, 100)));
+                this.mobList.push(new Mob_rook(this, new Vector2(250, 300)));
+                this.mobList.push(new Mob_rook(this, new Vector2(400, 100)));
+                this.mobList.push(new Mob_rook(this, new Vector2(100, 300)));
+                this.mobList.push(new Mob_rook(this, new Vector2(400, 300)));
+                this.mobList.push(new Mob_rook(this, new Vector2(250, 100)));
 
                 this.playBgm("level2_bgm");
                 break;
@@ -1991,10 +2007,10 @@ class Mob_rook extends Mob {
         super(game, position, game.wave);
 
         this.data =
-            [["N", "L", "N"]
-                , ["n", "O", "n"]
-                , ["n", "b", "n"]
-                , ["n", "n", "n"]]
+            [["B", "B", "B"]
+                , ["b", "O", "b"]
+                , ["b", "l", "b"]
+                , ["b", "b", "b"]]
 
         mobMaker(this, this.data);
 
