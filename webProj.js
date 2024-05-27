@@ -1468,12 +1468,13 @@ class Mob extends ComponentObject {
 
         // 맵 끝으로 가버렸는가
         if (this.position.y > GAME_HEIGHT - 100) {
-            this.leastSpeed = new Vector2(0, 100);
+            this.leastSpeed = this.leastSpeed.plus(new Vector2(0, 10));
         }
 
         // 충분히 멀리 갔다면 순수 제거
         if (this.position.y > GAME_HEIGHT + 1000) {
             this.removeMobHard();
+            console.log("몹 제거됨.");
         }
     }
 
@@ -1483,6 +1484,7 @@ class Mob extends ComponentObject {
         }
         this.game.removeComponent(this);
         this.game.doRemoval();
+        this.game.checkLevelUp();
     }
 
     updateSpeed(delta) {
