@@ -3,6 +3,7 @@ var lifemax=0;
 var explosionrange=0;
 
 function shopReady(){
+    
     $(".bullet").text("selected");
     $(".bullet").attr("disabled",true);
     $(".bullet").click(function(){
@@ -10,18 +11,26 @@ function shopReady(){
         game.selectBall(0);
         $(this).text("selected");
         $(this).attr("disabled",true);
-
-        $(".cannon").text("select");
-        $(".cannon").attr("disabled",false);
-        $(".lazer").text("select");
-        $(".lazer").attr("disabled",false);
+        if($(".cannon").text()=="selected"){
+            $(".cannon").text("select");
+            $(".cannon").attr("disabled",false);
+        }
+        if($(".lazer").text()=="selected"){
+            $(".lazer").text("select");
+            $(".lazer").attr("disabled",false);
+        }
     })
     $(".cannon").click(function(){
         if($(this).text()=="1000g"){
             if(game.coin>=1000){
                 $(this).text("select");
                 game.coin-=1000;
-                $(".money").text(game.coin+"g");
+                if(this.coin>=1000){
+                    $(".money").text(Math.floor(this.coin/1000)+"kg");
+                }
+                else{
+                    $(".money").text(this.coin+"g");
+                }
             }
        }
         else{
@@ -29,19 +38,26 @@ function shopReady(){
             game.selectBall(1);
             $(this).text("selected");
             $(this).attr("disabled",true);
-
-            $(".bullet").text("select");
-            $(".bullet").attr("disabled",false);
-            $(".lazer").text("select");
-            $(".lazer").attr("disabled",false);
+            if($(".lazer").text()=="selected"){
+                $(".lazer").text("select");
+                $(".lazer").attr("disabled",false);
+            }
+            if($(".bullet").text()=="selected"){
+                $(".bullet").text("select");
+                $(".bullet").attr("disabled",false);
+            }
         }
     })
     $(".lazer").click(function(){
         if($(this).text()=="1000g"){
             if(game.coin>=1000){
                 $(this).text("select");
-                game.coin-=1000;
-                $(".money").text(game.coin+"g");
+                if(this.coin>=1000){
+                    $(".money").text(Math.floor(this.coin/1000)+"kg");
+                }
+                else{
+                    $(".money").text(this.coin+"g");
+                }
             }
         }
         else{
@@ -49,11 +65,14 @@ function shopReady(){
             game.selectBall(2);
             $(this).text("selected");
             $(this).attr("disabled",true);
-
-            $(".bullet").text("select");
-            $(".bullet").attr("disabled",false);
-            $(".cannon").text("select");
-            $(".cannon").attr("disabled",false);
+            if($(".cannon").text()=="selected"){
+                $(".cannon").text("select");
+                $(".cannon").attr("disabled",false);
+            }
+            if($(".bullet").text()=="selected"){
+                $(".bullet").text("select");
+                $(".bullet").attr("disabled",false);
+            }
         }
     })
     $("#lifeaddition").click(function(){
@@ -66,49 +85,84 @@ function shopReady(){
                 $(this).attr("disabled",true);
             }
             game.coin-=1000;
-            $(".money").text(game.coin+"g");
+            if(this.coin>=1000){
+                $(".money").text(Math.floor(this.coin/1000)+"kg");
+            }
+            else{
+                $(".money").text(this.coin+"g");
+            }
         }
     })
     $("#lifepurchase").click(function(){
         if(game.coin>=500){
             buy_regeneration();
             game.coin-=500;
-            $(".money").text(game.coin+"g");
+            if(this.coin>=1000){
+                $(".money").text(Math.floor(this.coin/1000)+"kg");
+            }
+            else{
+                $(".money").text(this.coin+"g");
+            }
         }
     })
     $("#shieldpurchase").click(function(){
         if(game.coin>=2000){
             buy_shield();
             game.coin-=2000;
-            $(".money").text(game.coin+"g");
+            if(this.coin>=1000){
+                $(".money").text(Math.floor(this.coin/1000)+"kg");
+            }
+            else{
+                $(".money").text(this.coin+"g");
+            }
         }
     })
     $("#parringtime").click(function(){
         if(game.coin>=500){
             buy_parryCool();
             game.coin-=500;
-            $(".money").text(game.coin+"g");
+            if(this.coin>=1000){
+                $(".money").text(Math.floor(this.coin/1000)+"kg");
+            }
+            else{
+                $(".money").text(this.coin+"g");
+            }
         }
     })
     $("#explosionrange").click(function(){
         if(game.coin>=500){
             buy_explodeUp();
             game.coin-=500;
-            $(".money").text(game.coin+"g");
+            if(this.coin>=1000){
+                $(".money").text(Math.floor(this.coin/1000)+"kg");
+            }
+            else{
+                $(".money").text(this.coin+"g");
+            }
         }
     })
     $("#reloadtime").click(function(){
         if(game.coin>=1000){
             buy_reloadCool();
             game.coin-=1000;
-            $(".money").text(game.coin+"g");
+            if(this.coin>=1000){
+                $(".money").text(Math.floor(this.coin/1000)+"kg");
+            }
+            else{
+                $(".money").text(this.coin+"g");
+            }
         }
     })
     $("#stealthpurchase").click(function(){
         if(game.coin>=2000){
             buy_hidingSkill();
             game.coin-=2000;
-            $(".money").text(game.coin+"g");
+            if(this.coin>=1000){
+                $(".money").text(Math.floor(this.coin/1000)+"kg");
+            }
+            else{
+                $(".money").text(this.coin+"g");
+            }
         }
     })
 }
