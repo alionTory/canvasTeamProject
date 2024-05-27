@@ -25,25 +25,25 @@ BOX_PRICE_LAZER = 90;
 BOX_PRICE_CORE = 150;
 WAVE_CALL_BONUS = 100;
 
-CANNON_COOL = 2000;
+CANNON_COOL = 1987;
 CANNON_ERR = 30;
 CANNON_SPD = 200;
 CANNON_DMG = 18;
 
-MACHINEGUN_COOL = 3000;
-MACHINEGUN_ERR = 80;
+MACHINEGUN_COOL = 2345;
+MACHINEGUN_ERR = 120;
 MACHINEGUN_SPD = 360;
 MACHINEGUN_DMG = 12;
 
-LAZER_COOL = 11111;
+LAZER_COOL = 8888;
 LAZER_ERR = 0;
 LAZER_SPD = 100;
 LAZER_DMG = 200;
 
-MOVE_SPD_PAWN = 5;
-MOVE_SPD_KNIGHT = 5;
-MOVE_SPD_BISHOP = 5;
-MOVE_SPD_ROOK = 5;
+MOVE_SPD_PAWN = 7;
+MOVE_SPD_KNIGHT = 7;
+MOVE_SPD_BISHOP = 7;
+MOVE_SPD_ROOK = 7;
 MOVE_SPD_QWEEN = 10;
 MOVE_SPD_KING = 10;
 
@@ -2272,7 +2272,7 @@ class Bullet extends Attacks {
 
 class Lazer extends Attacks {
     constructor(game, box) {
-        let radius = 30;
+        let radius = 44;
         let spdScalar = LAZER_SPD;
         let damage = LAZER_DMG;
         let err = LAZER_ERR;
