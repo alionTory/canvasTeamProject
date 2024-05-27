@@ -1,6 +1,7 @@
 var ball="playerBall";
 var lifemax=0;
 var explosionrange=0;
+var toKunit = 10000;
 
 function shopReady(){
     
@@ -25,11 +26,12 @@ function shopReady(){
             if(game.coin>=1000){
                 $(this).text("select");
                 game.coin-=1000;
-                if(this.coin>=1000){
-                    $(".money").text(Math.floor(this.coin/1000)+"kg");
+                if(game.coin>=toKunit){
+                    
+                    $(".money").text(Math.floor(game.coin/1000)+"kg");
                 }
                 else{
-                    $(".money").text(this.coin+"g");
+                    $(".money").text(game.coin+"g");
                 }
             }
        }
@@ -52,11 +54,11 @@ function shopReady(){
         if($(this).text()=="1000g"){
             if(game.coin>=1000){
                 $(this).text("select");
-                if(this.coin>=1000){
-                    $(".money").text(Math.floor(this.coin/1000)+"kg");
+                if(game.coin>=toKunit){
+                    $(".money").text(Math.floor(game.coin/1000)+"kg");
                 }
                 else{
-                    $(".money").text(this.coin+"g");
+                    $(".money").text(game.coin+"g");
                 }
             }
         }
@@ -85,11 +87,11 @@ function shopReady(){
                 $(this).attr("disabled",true);
             }
             game.coin-=1000;
-            if(this.coin>=1000){
-                $(".money").text(Math.floor(this.coin/1000)+"kg");
+            if(game.coin>=toKunit){
+                $(".money").text(Math.floor(game.coin/1000)+"kg");
             }
             else{
-                $(".money").text(this.coin+"g");
+                $(".money").text(game.coin+"g");
             }
         }
     })
@@ -97,11 +99,11 @@ function shopReady(){
         if(game.coin>=500){
             buy_regeneration();
             game.coin-=500;
-            if(this.coin>=1000){
-                $(".money").text(Math.floor(this.coin/1000)+"kg");
+            if(game.coin>=toKunit){
+                $(".money").text(Math.floor(game.coin/1000)+"kg");
             }
             else{
-                $(".money").text(this.coin+"g");
+                $(".money").text(game.coin+"g");
             }
         }
     })
@@ -109,11 +111,11 @@ function shopReady(){
         if(game.coin>=2000){
             buy_shield();
             game.coin-=2000;
-            if(this.coin>=1000){
-                $(".money").text(Math.floor(this.coin/1000)+"kg");
+            if(game.coin>=toKunit){
+                $(".money").text(Math.floor(game.coin/1000)+"kg");
             }
             else{
-                $(".money").text(this.coin+"g");
+                $(".money").text(game.coin+"g");
             }
         }
     })
@@ -121,11 +123,11 @@ function shopReady(){
         if(game.coin>=500){
             buy_parryCool();
             game.coin-=500;
-            if(this.coin>=1000){
-                $(".money").text(Math.floor(this.coin/1000)+"kg");
+            if(game.coin>=toKunit){
+                $(".money").text(Math.floor(game.coin/1000)+"kg");
             }
             else{
-                $(".money").text(this.coin+"g");
+                $(".money").text(game.coin+"g");
             }
         }
     })
@@ -133,11 +135,11 @@ function shopReady(){
         if(game.coin>=500){
             buy_explodeUp();
             game.coin-=500;
-            if(this.coin>=1000){
-                $(".money").text(Math.floor(this.coin/1000)+"kg");
+            if(game.coin>=toKunit){
+                $(".money").text(Math.floor(game.coin/1000)+"kg");
             }
             else{
-                $(".money").text(this.coin+"g");
+                $(".money").text(game.coin+"g");
             }
         }
     })
@@ -145,11 +147,11 @@ function shopReady(){
         if(game.coin>=1000){
             buy_reloadCool();
             game.coin-=1000;
-            if(this.coin>=1000){
-                $(".money").text(Math.floor(this.coin/1000)+"kg");
+            if(game.coin>=toKunit){
+                $(".money").text(Math.floor(game.coin/1000)+"kg");
             }
             else{
-                $(".money").text(this.coin+"g");
+                $(".money").text(game.coin+"g");
             }
         }
     })
@@ -157,11 +159,11 @@ function shopReady(){
         if(game.coin>=2000){
             buy_hidingSkill();
             game.coin-=2000;
-            if(this.coin>=1000){
-                $(".money").text(Math.floor(this.coin/1000)+"kg");
+            if(game.coin>=toKunit){
+                $(".money").text(Math.floor(game.coin/1000)+"kg");
             }
             else{
-                $(".money").text(this.coin+"g");
+                $(".money").text(game.coin+"g");
             }
         }
     })

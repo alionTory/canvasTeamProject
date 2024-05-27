@@ -604,7 +604,7 @@ class Game {
 
     addCoin(toAddCoin) {
         console.log("coin : " + (this.coin += toAddCoin) + "(+" + toAddCoin + ")");
-        if(this.coin>=1000){
+        if(this.coin>=toKunit){
             $(".money").text(Math.floor(this.coin/1000)+"kg");
         }
         else{
@@ -615,7 +615,7 @@ class Game {
 
     addScore(toAddScore) {
         console.log("score : " + (this.score += 10 * toAddScore) + "(+" + 10 * toAddScore + ")");
-        if(this.score>=1000){
+        if(this.score>=toKunit){
             $(".score").text("score:"+Math.floor(this.score/1000)+"k");
         }
         else{
@@ -1463,7 +1463,7 @@ class BallSkill_2 extends ComponentObject {
         this.combo = 0;
         this.drawOrder = 99;
         this.sizseScalarDefault = 7;
-        this.sizeScaler = this.sizseScalarDefault;
+        this.sizeScalar = this.sizseScalarDefault;
         this.comboDiff = 0.85;
     }
 
