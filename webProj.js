@@ -88,6 +88,11 @@ var img_fireL2 = new Image(); img_fireL2.src = "imgFolder/fireL2.png";
 var img_fireD = new Image(); img_fireD.src = "imgFolder/fireD.png";
 var img_fireD2 = new Image(); img_fireD2.src = "imgFolder/fireD2.png";
 
+// 배경음악
+const level1_bgm = new Audio("soundFolder/game1.mp3");
+const level2_bgm = new Audio("soundFolder/game2.mp3");
+const level3_bgm = new Audio("soundFolder/game3.mp3");
+
 let game = null;
 
 // jquery 공식 문서에서는 $(document).ready() 대신 $(function() {})을 사용하도록 권장함.
@@ -150,6 +155,7 @@ const GAME_HEIGHT = 700;
 class Game {
     level;
     state;  // "main-menu", "paused", "game"
+    currentBgm;
 
     ctx;
     fps;
@@ -175,6 +181,7 @@ class Game {
     constructor(ctx) {
         this.level = STARTLEVEL; // 임시
         this.startMainMenu();
+        this.currentBgm = null;
 
         this.ctx = ctx;
         this.fps = 60;
@@ -212,6 +219,7 @@ class Game {
         this.state = "main-menu";
         $("#game-section").hide();
         $("#main-menu-section").show();
+        this.stopBgm();
     }
 
     startGame(level) {
@@ -260,20 +268,20 @@ class Game {
         for (let component of this.components) {
             component.draw(this.ctx);
         }
-        if(this.levelupTextActive){
-            this.ctx.fillStyle="white";
-            this.ctx.font="50px Silkscreen";
+        if (this.levelupTextActive) {
+            this.ctx.fillStyle = "white";
+            this.ctx.font = "50px Silkscreen";
             this.ctx.textAlign = "center";
             this.ctx.textBaseline = "middle";
-            this.ctx.fillText("LEVEL UP!",GAME_WIDTH/2,GAME_HEIGHT/2);
+            this.ctx.fillText("LEVEL UP!", GAME_WIDTH / 2, GAME_HEIGHT / 2);
         }
-        
-        if(this.clearTextActive){
-            this.ctx.fillStyle="white";
-            this.ctx.font="50px Silkscreen";
+
+        if (this.clearTextActive) {
+            this.ctx.fillStyle = "white";
+            this.ctx.font = "50px Silkscreen";
             this.ctx.textAlign = "center";
             this.ctx.textBaseline = "middle";
-            this.ctx.fillText("GAME CLEAR",GAME_WIDTH/2,GAME_HEIGHT/2);
+            this.ctx.fillText("GAME CLEAR", GAME_WIDTH / 2, GAME_HEIGHT / 2);
         }
     }
     runLoop(timestamp) {
@@ -355,7 +363,6 @@ class Game {
 
     levelStarter(level) { // 코어가 부서질 때 레벨을 올릴지 판단할 것.
         this.initGame();
-        console.log(this.components);
 
         switch (level) {
             // wave * WAVE_DISTANCE가 다음 웨이브 몬스터의 요구 이동 거리
@@ -377,6 +384,8 @@ class Game {
                 this.mobList.push(new Mob_pawn(this, new Vector2(450, 100)));
                 this.mobList.push(new Mob_pawn(this, new Vector2(450, 200)));
                 this.mobList.push(new Mob_bishop(this, new Vector2(250, 80)));
+
+                this.playBgm("level1_bgm");
                 break;
 
             case 2:
@@ -387,15 +396,51 @@ class Game {
                 this.mobList.push(new Mob_rook(this, new Vector2(100, 300)));
                 this.mobList.push(new Mob_rook(this, new Vector2(400, 300)));
                 this.mobList.push(new Mob_bishop(this, new Vector2(250, 100)));
+
+                this.playBgm("level2_bgm");
                 break;
 
             case 3:
                 this.wave = 0;
                 this.mobList.push(new Mob_qween(this, new Vector2(250, -650)));
+
+                this.playBgm("level3_bgm");
                 break;
 
             default:
                 console.err("잘못된 레벨...");
+        }
+
+    }
+
+    playBgm(bgmName) {
+        this.stopBgm();
+        switch (bgmName) {
+            case "level1_bgm":
+                this.currentBgm = level1_bgm;
+                break;
+            case "level2_bgm":
+                this.currentBgm = level2_bgm;
+                break;
+            case "level3_bgm":
+                this.currentBgm = level3_bgm;
+                break;
+        }
+        if (bgmName == null) {
+            console.error("playBgm() : 존재하지 않는 bgm입니다.");
+            console.trace();
+            return;
+        }
+        this.currentBgm.currentTime = 0;
+        this.currentBgm.loop = true;
+        this.currentBgm.play();
+        console.log(this.currentBgm);
+    }
+
+    stopBgm() {
+        if (this.currentBgm != null) {
+            this.currentBgm.pause();
+            this.currentBgm = null;
         }
     }
 
@@ -430,19 +475,22 @@ class Game {
     checkLevelUp() {
         if (this.mobList.length == 0) {
             //레벨 클리어
-            if(this.level == MAX_LEVEL){
+            this.stopBgm();
+            let gameclear_mp3 = new Audio("soundFolder/gameclear.mp3");
+            gameclear_mp3.play();
+            if (this.level == MAX_LEVEL) {
                 this.gameEnd("win");
-            }else {
-            //레벨 업
-            console.log("lvup");
+            } else {
+                //레벨 업
+                console.log("lvup");
 
-            this.level++;
-            this.levelupTextActive=true;
-            setTimeout(()=>{
-                this.levelStarter(this.level);
-                this.levelupTextActive=false;
-            },5000)
-            //setTimeout(function () { this.levelStarter(this.level) }.bind(this), 2000);
+                this.level++;
+                this.levelupTextActive = true;
+                setTimeout(() => {
+                    this.levelStarter(this.level);
+                    this.levelupTextActive = false;
+                }, 5000)
+                //setTimeout(function () { this.levelStarter(this.level) }.bind(this), 2000);
             }
         }
     }
@@ -453,19 +501,19 @@ class Game {
     }
 
     addScore(toAddScore) {
-        console.log("score : " + (this.score += 10*toAddScore) + "(+" + 10*toAddScore + ")");
+        console.log("score : " + (this.score += 10 * toAddScore) + "(+" + 10 * toAddScore + ")");
     }
 
     gameEnd(winLose) {
         switch (winLose) {
             case "win":
                 console.log("win");
-                this.clearTextActive=true;
+                this.clearTextActive = true;
                 this.atkClear();
 
-                setTimeout(()=>{
-                    this.clearTextActive=false;
-                },5000);
+                setTimeout(() => {
+                    this.clearTextActive = false;
+                }, 5000);
                 break;
 
             case "lose":
@@ -473,7 +521,7 @@ class Game {
                 new Anime_BrokenPlayer(this, this.player);
                 this.removeComponent(this.playerBall);
                 this.removeComponent(this.PlayerLaunchAngleArrow);
-  
+
                 Box.attackAble = false;
                 for (let mob of this.mobList) {
                     mob.leastSpeed = new Vector2(0, 100);
@@ -779,32 +827,32 @@ class PlayerShield extends ComponentObject {
         this.shieldCount = this.player.shieldCount;
 
         super.update(delta);
-        this.theta += 6*Math.PI/180;
+        this.theta += 6 * Math.PI / 180;
 
-        if (this.theta == Math.PI*2) this.theta = 0;
+        if (this.theta == Math.PI * 2) this.theta = 0;
 
-        this.theta2 = this.theta + 120*Math.PI/180;
-        this.theta3 = this.theta + 240*Math.PI/180;
+        this.theta2 = this.theta + 120 * Math.PI / 180;
+        this.theta3 = this.theta + 240 * Math.PI / 180;
     }
 
     draw(ctx) {
         ctx.strokeStyle = "lightBlue";
         ctx.fillStyle = 'lightBlue';
 
-        switch(this.shieldCount) {
+        switch (this.shieldCount) {
             case 3:
                 ctx.beginPath();
-                ctx.arc(this.position.x + Math.sin(this.theta)*this.orbitRad, this.position.y + Math.cos(this.theta)*this.orbitRad, this.radius, 0, Math.PI * 2, false);
+                ctx.arc(this.position.x + Math.sin(this.theta) * this.orbitRad, this.position.y + Math.cos(this.theta) * this.orbitRad, this.radius, 0, Math.PI * 2, false);
                 ctx.stroke();
                 ctx.fill();
             case 2:
                 ctx.beginPath();
-                ctx.arc(this.position.x + Math.sin(this.theta2)*this.orbitRad, this.position.y + Math.cos(this.theta2)*this.orbitRad, this.radius, 0, Math.PI * 2, false);
+                ctx.arc(this.position.x + Math.sin(this.theta2) * this.orbitRad, this.position.y + Math.cos(this.theta2) * this.orbitRad, this.radius, 0, Math.PI * 2, false);
                 ctx.stroke();
                 ctx.fill();
             case 1:
                 ctx.beginPath();
-                ctx.arc(this.position.x + Math.sin(this.theta3)*this.orbitRad, this.position.y + Math.cos(this.theta3)*this.orbitRad, this.radius, 0, Math.PI * 2, false);
+                ctx.arc(this.position.x + Math.sin(this.theta3) * this.orbitRad, this.position.y + Math.cos(this.theta3) * this.orbitRad, this.radius, 0, Math.PI * 2, false);
                 ctx.stroke();
                 ctx.fill();
             case 0:
@@ -936,6 +984,8 @@ class PlayerBall extends ComponentObject {
         if (this.ignoreCollideWithPlayer)
             return;
 
+        let jump_mp3 = new Audio("soundFolder/jump.mp3");
+        jump_mp3.play();
         this.brokenBlockCount = 0;
         let launchDirection = Vector2.subtract(fixedCursorPosition, this.position);
         launchDirection.setLength(this.launchSpeed);
@@ -1211,12 +1261,18 @@ class Box extends ComponentObject {
         this.owner.processCollision(collisionInfo);
 
         if (collisionInfo.component instanceof PlayerBall) {
+            this.playCollisionSound();
             //충돌된 상자 제거
             this.destroyBox();
         }
         else if (collisionInfo.component instanceof PlayerBallExplosion && !(this instanceof CoreBox)) {
             this.destroyBox();
         }
+    }
+
+    playCollisionSound() {
+        let crash_mp3 = new Audio("soundFolder/crash.mp3");
+        crash_mp3.play();
     }
 
     destroyBox(coreBroken) {
@@ -1301,6 +1357,11 @@ class CoreBox extends Box {
         this.game.checkLevelUp();
 
         this.destroyed = true;
+    }
+
+    playCollisionSound() {
+        let coreexplosion_mp3 = new Audio("soundFolder/coreexplosion.mp3");
+        coreexplosion_mp3.play();
     }
 
     draw(ctx) {
@@ -1874,7 +1935,7 @@ class Anime_explode extends Anime {
     where;
     errX;
     errY;
-    
+
     constructor(game, size, spd, where, errX, errY) {
         super(game);
         this.size = size;
@@ -2052,7 +2113,7 @@ class Anime_BrokenPlayer extends Anime {
 
     draw(ctx) {
         if (this.tmpTick + 600 < this.game.previousTicks) {
-            new Anime_explode(this.game, 50, 0.02, this.player, Math.random()*this.scalarX - this.scalarX/2, Math.random()*this.scalarY - this.scalarY/2);
+            new Anime_explode(this.game, 50, 0.02, this.player, Math.random() * this.scalarX - this.scalarX / 2, Math.random() * this.scalarY - this.scalarY / 2);
             this.tmpTick = this.game.previousTicks;
         }
     }
