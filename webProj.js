@@ -310,18 +310,16 @@ class Game {
             this.updateCursorVisibility();
         }
         else if (this.state == "paused") {
-            for (let button of this.pauseScreenButtons) {
-                button.processInput();
-                this.updateCursorVisibility();
-            }
             if (gameInput.esc)
                 this.resumeGame();
+            this.updateCursorVisibility();
         }
         for (let key in this.buttons) {
             this.buttons[key].processInput();
         }
         gameInput.click = gameInput.esc = false;
     }
+
     updateGame(timestamp) {
         this.delta = (timestamp - this.previousTicks) / 1000;
         if (this.delta > 0.05)
