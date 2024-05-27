@@ -1488,7 +1488,7 @@ class Box extends ComponentObject {
     processCollision(collisionInfo) {
         this.owner.processCollision(collisionInfo);
 
-        if (collisionInfo.component instanceof PlayerBall || BallSkill_1) {
+        if (collisionInfo.component instanceof PlayerBall || collisionInfo.component instanceof BallSkill_1) {
             this.playCollisionSound();
             //충돌된 상자 제거
             this.destroyBox();
