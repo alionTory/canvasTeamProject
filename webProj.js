@@ -260,6 +260,7 @@ class Game {
         $("#game-section").hide();
         $("#main-menu-section").show();
         this.stopBgm();
+        this.updateCursorVisibility();
         }
 
     startGame(level) {
@@ -268,6 +269,7 @@ class Game {
         $("#main-menu-section").hide();
         $("#game-section").show();
         this.levelStarter(level);
+        this.updateCursorVisibility();
     }
 
     processInput() {
@@ -275,10 +277,12 @@ class Game {
             this.player.processInput();
             if (gameInput.esc)
                 this.state = "paused";
+            this.updateCursorVisibility();
         }
         else if (this.state == "paused") {
             for (let button of this.pauseScreenButtons) {
                 button.processInput();
+                this.updateCursorVisibility();
             }
             if (gameInput.esc)
                 this.state = "game";
@@ -332,11 +336,17 @@ class Game {
             
         }
         if(this.scoreTextActive){
+            this.ctx.save();
+            this.ctx.fillStyle="rgba(0,0,0,0.5)";
+            const textWidth=this.ctx.measureText("SCORE : " + this.score).width;
+            this.ctx.fillRect(GAME_WIDTH / 2 - textWidth / 2 - 10, GAME_HEIGHT / 2 - 70 - 20, textWidth + 20, 40);
+
             this.ctx.fillStyle="white";
             this.ctx.font="50px Silkscreen";
             this.ctx.textAlign = "center";
             this.ctx.textBaseline = "middle";
             this.ctx.fillText("SCORE : "+this.score, GAME_WIDTH/2, GAME_HEIGHT/2-70);
+            this.ctx.restore();
         }
     }  
 
@@ -594,6 +604,16 @@ class Game {
                 break;
         }
     }
+
+    updateCursorVisibility() {
+        const gameCanvas = $("#game-canvas");
+        if (this.state === "game") {
+            gameCanvas.addClass("hide_cursor");
+        } else {
+            gameCanvas.removeClass("hide_cursor");
+        }
+    }
+    
 }
 
 class Component {
@@ -710,13 +730,21 @@ class Button extends Component {
 
         ctx.save();
 
-        if (this.hover)
-            ctx.fillStyle = "red";
+        if (this.hover){
+            ctx.fillStyle = "black";
+            ctx.strokeStyle="white"
+            ctx.lineWidth=5;
+            ctx.strokeRect(this.position.x - this.width / 2, this.position.y - this.height / 2, this.width, this.height)
+        }
         else
-            ctx.fillStyle = "blue";
+            ctx.fillStyle = "lightgray";
         ctx.fillRect(this.position.x - this.width / 2, this.position.y - this.height / 2, this.width, this.height);
 
-        ctx.fillStyle = "black";
+
+        if (this.hover)
+            ctx.fillStyle = "white";
+        else
+            ctx.fillStyle = "black";
         ctx.font = "20px Silkscreen";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
