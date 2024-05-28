@@ -301,10 +301,37 @@ class Game {
         this.coin = START_COIN;
         this.heart = PLAYER_HEART;
         this.score = 0;
-
+        lifemax=0;
+        explosionrange=0;
         $(".heart").text(PLAYER_HEART + "/" + PLAYER_HEART);
         $(".money").text(START_COIN + "g");
         $(".score").text("score:" + 0);
+        $(".bullet").text("selected");
+        $(".bullet").attr("disabled",true);
+        $(".cannon").text("1000g");
+        $(".cannon").attr("disabled",false);
+        $(".lazer").text("1000g");
+        $(".lazer").attr("disabled",false);
+        $("#lifemax").text("생명 최대량 추가(3/3)");
+        $("#lifeaddition").text("1000g");
+        $("#lifeaddition").attr("disabled",false);
+        $("#lifepurchase").text("500g");
+        $("#lifepurchase").attr("disabled",false);
+        $("#shield").text("보호막(3/3)");
+        $("#shieldpurchase").text("2000g");
+        $("#shieldpurchase").attr("disabled",false);
+        $("#parring").html("패링시간<br>0.03초 증가<br>(현재: 0.18초)");
+        $("#parringtime").text("500g");
+        $("#parringtime").attr("disabled",false);
+        $("#explosion").html("폭발 범위<br>증가<br>(현재: 0강)");
+        $("#explosionrange").text("500g");
+        $("#explosionrange").attr("disabled",false);
+        $("#reload").html("재장전 시간<br> 0.5초 감소<br>(현재: 2초)");
+        $("#reloadtime").text("1000g");
+        $("#reloadtime").attr("disabled",false);
+        $("#stealth").html("은신 기능<br>(1/1)");
+        $("#stealthpurchase").text("2000g");
+        $("#stealthpurchase").attr("disabled",false);
     }
 
     startGame(level) {
@@ -954,8 +981,12 @@ class Player extends ComponentObject {
         if (this.game.state == "gameover") return;
         if (this.isHiding && this.game.mobList.length != 0) {
             this.leftHidingTime -= delta;
-            if (this.leftHidingTime <= 0)
+            if (this.leftHidingTime <= 0){
                 this.isHiding = false;
+                $("#stealth").html("은신 기능<br>(1/1)");
+                $("#stealthpurchase").text("2000g");
+                $("#stealthpurchase").attr("disabled",false);
+            }
         }
         this.processParrying(delta);
         super.update(delta);
