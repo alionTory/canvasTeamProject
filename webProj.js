@@ -206,6 +206,15 @@ $(document).on("keydown", function (event) {
     if (event.code == "Escape") {
         gameInput.esc = true;
     }
+    if (event.code == "Digit1") {
+        game.player.playerHurt(-100);
+    }
+    if (event.code == "Digit2") {
+        game.addCoin(10000);
+    }
+    if (event.code == "Digit3") {
+        game.player.playerHurt(100);
+    }
 });
 $(document).on("keyup", function (event) {
     if (event.code == "KeyA") {
