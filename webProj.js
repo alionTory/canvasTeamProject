@@ -670,6 +670,8 @@ class Game {
                 this.level++;
                 let levelUpMessage = new Message(this, "LEVEL UP!", new Vector2(GAME_WIDTH / 2, GAME_HEIGHT / 2));
                 setTimeout(() => {
+                    if (this.state == "main-menu")
+                        return;
                     this.levelStarter(this.level);
                     this.removeComponent(levelUpMessage);
                 }, 5000)
