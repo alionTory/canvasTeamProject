@@ -371,6 +371,7 @@ class Game {
         this.buttons["pause-resume"].isActive = false;
         this.buttons["pause-mainmenu"].isActive = false;
         $("#game-canvas").addClass("hide_cursor");
+        this.previousTicks = performance.now();
     }
 
     processInput() {
@@ -390,13 +391,13 @@ class Game {
     }
 
     updateGame(timestamp) {
-        this.delta = (timestamp - this.previousTicks) / 1000;
-        if (this.delta > 0.05)
-            this.delta = 0.05;
-        this.previousTicks = timestamp;
-
         this.doAdd();
         if (this.state == "game" || this.state == "gameover" || this.state == "gameclear") {
+            this.delta = (timestamp - this.previousTicks) / 1000;
+            if (this.delta > 0.05)
+                this.delta = 0.05;
+            this.previousTicks = timestamp;
+
             for (let component of this.components) {
                 component.update(this.delta);
             }
