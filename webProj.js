@@ -468,14 +468,19 @@ class Game {
         this.removalList.push(component);
     }
 
-    // components 에서 removalList의 component들을 빈 공간이 생기지 않게 삭제.
+    // components와 addList 에서 removalList의 component들을 빈 공간이 생기지 않게 삭제.
     doRemoval() {
         for (let component of this.removalList) {
             let removeIndex = this.components.indexOf(component);
-            if (removeIndex == -1)
-                console.error("Game removeComponent() : 배열에 지우려는 component가 없습니다.");
-            else
+            if (removeIndex != -1) {
                 this.components.splice(removeIndex, 1);
+            } else {
+                removeIndex = this.addList.indexOf(component);
+                if (removeIndex != -1)
+                    this.addList.splice(removeIndex, 1);
+                else
+                    console.error("Game doRemoval() : 배열에 지우려는 component가 없습니다.");
+            }
 
             removeIndex = this.collideablesWithBall.indexOf(component);
             if (removeIndex != -1)
