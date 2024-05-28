@@ -9,10 +9,12 @@ let fixedCursorPosition = null;
 
 PLAYER_HEART = 1000;
 HIDING_SKILL_PERSIST_TIME = 10;
-START_COIN = 0;
+PARRY_T0LL = 0.18;
+START_COIN = 10000;
 PLAYER_SPD = 444;
 BALL_MISS_DMG = 1;
 SHIELD_COOL = 6000;
+PARRY_COOL = 0.5;
 
 REGEN_SCALAR = 100;
 MAX_HEALTH_SCALAR = 200;
@@ -293,6 +295,21 @@ class Game {
     }
 
     startMainMenu() {
+        if (this.playerBall instanceof PlayerBall) {
+            this.playerBall.removeSkill();
+            this.player.shieldLevel = 0;
+            this.player.parryingToleranceTime = PARRY_T0LL;
+            this.playerBall.explosionRadius = BALL_EXPLOTION_RAD;
+            this.player.parryingCoolTime = PARRY_COOL;
+
+            console.log(this.playerBall.ball_id);
+            console.log(this.player.shieldLevel);
+            console.log(this.player.parryingToleranceTime);
+            console.log(this.playerBall.explosionRadius);
+            console.log(this.player.parryingCoolTime);
+            
+        }
+
         this.state = "main-menu";
         $("#game-section").hide();
         $("#main-menu-section").show();
@@ -303,6 +320,12 @@ class Game {
         this.score = 0;
         lifemax=0;
         explosionrange=0;
+
+
+
+        
+
+
         $(".heart").text(PLAYER_HEART + "/" + PLAYER_HEART);
         $(".money").text(START_COIN + "g");
         $(".score").text("score:" + 0);
@@ -933,7 +956,7 @@ class Player extends ComponentObject {
         this.shield = new PlayerShield(this.game, this);
 
         // 공 패링 관련
-        this.parryingCoolTime = 0.5;
+        this.parryingCoolTime = PARRY_COOL;
 
         this.position.set(GAME_WIDTH / 2, GAME_HEIGHT - this.height / 2 - 10);
         this.shape = new ShapeAABB(this, new Vector2(), new Vector2());
@@ -948,7 +971,7 @@ class Player extends ComponentObject {
         this.isBroken = false;
         this.leftTimeForNextParrying = 0;
         this.isParrying = false;
-        this.parryingToleranceTime = 0.18;
+        this.parryingToleranceTime = PARRY_T0LL;
         this.leftParryingPersistTime = 0;
     }
 
