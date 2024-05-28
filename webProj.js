@@ -473,11 +473,6 @@ class Game {
     }
 
     initLevel() {
-        // 버튼 초기화
-        for (let key in this.buttons) {
-            this.buttons[key].isActive = false;
-        }
-
         $("#game-canvas").addClass("hide_cursor");
 
         //플레이어 상태 초기화
