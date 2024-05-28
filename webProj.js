@@ -889,6 +889,7 @@ class Message extends Component {
         super(game);
         this.text = text;
         this.position = position;
+        this.drawOrder = 101;
     }
 
     draw(ctx) {
@@ -911,6 +912,7 @@ class VariableMessage extends Component {
         super(game);
         this.getMessage = getMessage;
         this.position = position;
+        this.drawOrder = 101;
     }
 
     draw(ctx) {
