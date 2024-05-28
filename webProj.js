@@ -1341,6 +1341,7 @@ class PlayerBall extends ComponentObject {
         if (this.ball_id instanceof BallSkill_2) {
             this.ball_id.comboReset();
         }
+        this.ball_id = null;
     }
 
     updateParrying() {
