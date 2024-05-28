@@ -280,8 +280,6 @@ class Game {
 
         this.coin = START_COIN;
         this.score = 0;
-
-        this.nextWaveInfo = new NextWaveInfo(this);
     }
 
     loadComponents() {
@@ -289,6 +287,8 @@ class Game {
         this.playerBall = new PlayerBall(this, this.player);
         this.playerArrow = new PlayerLaunchAngleArrow(this, this.player, this.playerBall);
         new Anime_background(this);
+
+        this.nextWaveInfo = new NextWaveInfo(this);
 
         let pauseScreenResumeButton = new Button(this, new Vector2(GAME_WIDTH / 2, GAME_HEIGHT / 2 - 50), 130, 50, "resume");
         pauseScreenResumeButton.setEventHandler(function () { this.game.resumeGame(); });
@@ -2382,6 +2382,7 @@ class NextWaveInfo extends ComponentObject {
     }
 
     draw(ctx) {
+        console.log("drawing nextWaveInfo");
         if (this.frontestMob == null) return;
         if (this.frontestMob.frontestBox.position.y >= -(2 + WAVE_DEFAULT_DIST)) return;
 
