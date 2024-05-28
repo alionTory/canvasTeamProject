@@ -491,8 +491,6 @@ class Game {
 
         // 이전 게임에 남아있던 불필요한 componet 제거
         this.trashComponentClear();
-        console.log("init game");
-        console.log(this.components);
     }
 
     // 레벨 시작 시 필요없는 component 제거
@@ -572,9 +570,6 @@ class Game {
             default:
                 console.err("잘못된 레벨...");
         }
-        console.log("level starter");
-        console.log(this.components);
-
     }
 
     playBgm(bgmName) {
@@ -723,7 +718,6 @@ class Game {
                     this.player.isBroken = true;
                 }, 3000);
                 setTimeout(() => {
-                    console.log(gameOverText);
                     this.removeComponent(gameOverText);
                     new VariableMessage(this, function () { return "SCORE : " + this.game.score; }, new Vector2(GAME_WIDTH / 2, GAME_HEIGHT / 2 - 70));
                     this.buttons["gameend-mainmenu"].isActive = true;
@@ -2363,7 +2357,6 @@ class NextWaveInfo extends ComponentObject {
     }
 
     draw(ctx) {
-        console.log("drawing nextWaveInfo");
         if (this.frontestMob == null) return;
         if (this.frontestMob.frontestBox.position.y >= -(2 + WAVE_DEFAULT_DIST)) return;
 
