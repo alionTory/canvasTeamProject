@@ -301,6 +301,8 @@ class Game {
         let gameEndMainmenuButton = new Button(this, new Vector2(GAME_WIDTH / 2, GAME_HEIGHT / 2 + 50), 130, 50, "main menu");
         gameEndMainmenuButton.setEventHandler(function () { this.game.startMainMenu(); });
         this.buttons["gameend-mainmenu"] = gameEndMainmenuButton;
+
+        this.doAdd();
     }
 
     startMainMenu() {
