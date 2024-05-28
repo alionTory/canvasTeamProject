@@ -306,6 +306,7 @@ class Game {
         this.score = 0;
         this.stopBgm();
         this.initShop();
+        $("#game-canvas").addClass("hide_cursor");
     }
 
     initShop() {
@@ -473,8 +474,6 @@ class Game {
     }
 
     initLevel() {
-        $("#game-canvas").addClass("hide_cursor");
-
         //플레이어 상태 초기화
         this.player.init();
 
