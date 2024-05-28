@@ -504,6 +504,8 @@ class Game {
 
         // 이전 게임에 남아있던 불필요한 componet 제거
         this.trashComponentClear();
+        console.log("init game");
+        console.log(this.components);
     }
 
     trashComponentClear() {
@@ -581,6 +583,8 @@ class Game {
             default:
                 console.err("잘못된 레벨...");
         }
+        console.log("level starter");
+        console.log(this.components);
 
     }
 
