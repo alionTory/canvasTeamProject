@@ -262,24 +262,15 @@ class Game {
 
     constructor(ctx) {
         this.level = 1; // 임시
-        this.startMainMenu();
         this.currentBgm = null;
 
         this.ctx = ctx;
         this.fps = 60;
         this.delta = 1 / this.fps;
         this.previousTicks = performance.now();
-        this.components = [];
-        this.addList = [];
-        this.removalList = [];
-        this.collideablesWithBall = [];
-        this.buttons = {};
-        this.loadComponents();
+        this.startMainMenu();
         //setInterval(this.runLoop.bind(this), this.delta * 1000);
         requestAnimationFrame(this.runLoop.bind(this));
-
-        this.coin = START_COIN;
-        this.score = 0;
     }
 
     loadComponents() {
@@ -305,38 +296,19 @@ class Game {
         this.doAdd();
     }
 
-    startMainMenu() {
-        if (this.playerBall instanceof PlayerBall) {
-            this.playerBall.removeSkill();
-            this.player.shieldLevel = 0;
-            this.player.parryingToleranceTime = PARRY_T0LL;
-            this.playerBall.explosionRadius = BALL_EXPLOTION_RAD;
-            this.player.parryingCoolTime = PARRY_COOL;
-
-            console.log(this.playerBall.ball_id);
-            console.log(this.player.shieldLevel);
-            console.log(this.player.parryingToleranceTime);
-            console.log(this.playerBall.explosionRadius);
-            console.log(this.player.parryingCoolTime);
-
-        }
-
-        this.state = "main-menu";
-        $("#game-section").hide();
-        $("#main-menu-section").show();
-        this.stopBgm();
-
+    initGame() {
+        this.components = [];
+        this.addList = [];
+        this.removalList = [];
+        this.collideablesWithBall = [];
+        this.buttons = {};
         this.coin = START_COIN;
-        this.heart = PLAYER_HEART;
         this.score = 0;
-        lifemax = 0;
-        explosionrange = 0;
+        this.stopBgm();
+        this.initShop();
+    }
 
-
-
-
-
-
+    initShop() {
         $(".heart").text(PLAYER_HEART + "/" + PLAYER_HEART);
         $(".money").text(START_COIN + "g");
         $(".score").text("score:" + 0);
@@ -366,6 +338,16 @@ class Game {
         $("#stealth").html("은신 기능<br>(1/1)");
         $("#stealthpurchase").text("2000g");
         $("#stealthpurchase").attr("disabled", false);
+        lifemax = 0;
+        explosionrange = 0;
+    }
+
+    startMainMenu() {
+        this.state = "main-menu";
+        $("#game-section").hide();
+        $("#main-menu-section").show();
+        this.initGame();
+        this.loadComponents();
     }
 
     startGame(level) {
@@ -373,7 +355,6 @@ class Game {
         this.level = level;
         $("#main-menu-section").hide();
         $("#game-section").show();
-        this.player.init();
         this.levelStarter(level);
     }
 
@@ -491,7 +472,7 @@ class Game {
         this.removalList = [];
     }
 
-    initGame() {
+    initLevel() {
         // 버튼 초기화
         for (let key in this.buttons) {
             this.buttons[key].isActive = false;
@@ -500,8 +481,7 @@ class Game {
         $("#game-canvas").addClass("hide_cursor");
 
         //플레이어 상태 초기화
-        this.player.position.x = GAME_WIDTH / 2;
-        this.player.isBroken = false;
+        this.player.init();
 
         //공 상태 초기화
         this.playerBall.init();
@@ -515,10 +495,11 @@ class Game {
         console.log(this.components);
     }
 
+    // 레벨 시작 시 필요없는 component 제거
     trashComponentClear() {
         for (let comp of this.components) {
-            if (!(comp instanceof Player) && !(comp instanceof PlayerBall) && !(comp instanceof PlayerLaunchAngleArrow)
-                && !(comp instanceof Anime_background) && !(comp instanceof Button) && !(comp instanceof NextWaveInfo))
+            if (comp instanceof Attacks || (!(comp instanceof Anime_background) && comp instanceof Anime)
+                || comp instanceof Message || comp instanceof VariableMessage || comp instanceof PlayerBallExplosion)
                 this.removeComponent(comp);
         }
         this.doRemoval();
@@ -526,7 +507,7 @@ class Game {
     }
 
     levelStarter(level) { // 코어가 부서질 때 레벨을 올릴지 판단할 것.
-        this.initGame();
+        this.initLevel();
 
         switch (level) {
             // wave * WAVE_DISTANCE가 다음 웨이브 몬스터의 요구 이동 거리
@@ -972,6 +953,7 @@ class Player extends ComponentObject {
         this.radianLimit = Math.PI / 6;
         this.heart = PLAYER_HEART;
         this.isHiding = false;
+        this.leftHidingTime = 0;
         this.shieldCount = 0;
         this.shieldLevel = 0;
         this.isBroken = false;
@@ -982,21 +964,19 @@ class Player extends ComponentObject {
 
         // 공 패링 관련
         this.parryingCoolTime = PARRY_COOL;
+        this.parryingToleranceTime = PARRY_T0LL;
 
         this.position.set(GAME_WIDTH / 2, GAME_HEIGHT - this.height / 2 - 10);
         this.shape = new ShapeAABB(this, new Vector2(), new Vector2());
         game.collideablesWithBall.push(this);
     }
 
+    // 레벨 시작 시 실행
     init() {
-        this.heart = PLAYER_HEART;
-        this.isHiding = false;
-        this.leftHidingTime = 0;
-        this.shieldCount = 0;
+        this.position.x = GAME_WIDTH / 2;
         this.isBroken = false;
         this.leftTimeForNextParrying = 0;
         this.isParrying = false;
-        this.parryingToleranceTime = PARRY_T0LL;
         this.leftParryingPersistTime = 0;
     }
 
