@@ -522,6 +522,7 @@ class Game {
                 this.removeComponent(comp);
         }
         this.doRemoval();
+        this.addList = [];
     }
 
     levelStarter(level) { // 코어가 부서질 때 레벨을 올릴지 판단할 것.
