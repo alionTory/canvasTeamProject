@@ -518,7 +518,7 @@ class Game {
     trashComponentClear() {
         for (let comp of this.components) {
             if (!(comp instanceof Player) && !(comp instanceof PlayerBall) && !(comp instanceof PlayerLaunchAngleArrow)
-                && !(comp instanceof Anime_background) && !(comp instanceof Button))
+                && !(comp instanceof Anime_background) && !(comp instanceof Button) && !(comp instanceof NextWaveInfo))
                 this.removeComponent(comp);
         }
         this.doRemoval();
