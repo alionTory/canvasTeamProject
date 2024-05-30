@@ -1012,7 +1012,7 @@ class Player extends ComponentObject {
     processShield() {
         new Anime_rectAct(this.game, this, 4, 500, "lightBlue");
         this.shieldCount--;
-        this.shield.tmpTick = this.game.previousTicks;
+        this.shield.leftTimeForRegen = this.shield.shieldCool;
     }
 
     processParrying(delta) {
@@ -1103,6 +1103,7 @@ class PlayerShield extends ComponentObject {
     orbitRad;
     radius;
     shieldCool;
+    leftTimeForRegen;
     constructor(game, player) {
         super(game);
         this.player = player;
@@ -1111,6 +1112,7 @@ class PlayerShield extends ComponentObject {
         this.radius = 2;
         this.drawOrder = 99;
         this.shieldCool = SHIELD_COOL;
+        this.leftTimeForRegen = this.shieldCool;
     }
 
     update(delta) {
@@ -1125,15 +1127,16 @@ class PlayerShield extends ComponentObject {
         this.theta2 = this.theta + 120 * Math.PI / 180;
         this.theta3 = this.theta + 240 * Math.PI / 180;
 
+        this.leftTimeForRegen -= delta;
         this.shieldRegen();
     }
 
     shieldRegen() {
-        if (this.tmpTick + this.shieldCool < this.game.previousTicks) {
-            this.tmpTick = this.game.previousTicks;
+        if (this.leftTimeForRegen <= 0) {
+            this.leftTimeForRegen = this.shieldCool;
             if (this.player.shieldLevel > this.shieldCount) {
                 this.player.shieldCount++;
-                console.log("shield");
+                console.log("shield regen");
             }
         }
     }
