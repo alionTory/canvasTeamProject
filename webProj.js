@@ -231,7 +231,6 @@ $(document).on("keyup", function (event) {
     }
 });
 $(window).on("blur", function () {
-    console.log("blur");
     gameInput.left = false;
     gameInput.right = false;
     gameInput.space = false;
