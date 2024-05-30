@@ -27,17 +27,17 @@ BOX_PRICE_LAZER = 90;
 BOX_PRICE_CORE = 150;
 WAVE_CALL_BONUS = 100;
 
-CANNON_COOL = 1987;
+CANNON_COOL = 1.987;
 CANNON_ERR = 30;
 CANNON_SPD = 200;
 CANNON_DMG = 18;
 
-MACHINEGUN_COOL = 2345;
+MACHINEGUN_COOL = 2.345;
 MACHINEGUN_ERR = 120;
 MACHINEGUN_SPD = 360;
 MACHINEGUN_DMG = 12;
 
-LAZER_COOL = 8888;
+LAZER_COOL = 8.888;
 LAZER_ERR = 0;
 LAZER_SPD = 100;
 LAZER_DMG = 200;
@@ -1642,7 +1642,8 @@ class Box extends ComponentObject {
     explodeSize;
     bonusCoin;
 
-    createdTick;
+    coolTime;
+    leftTimeForAttack;
 
     constructor(game, relativePosition, width, height, owner = null, boost) {
         super(game);
@@ -1659,8 +1660,10 @@ class Box extends ComponentObject {
         this.shape = new ShapeAABB(this.owner, new Vector2(), new Vector2());
         this.updateShape();
         this.drawOrder = 50;
-        //createdTick은 오로지 doAttack에서만 쓸것...
-        this.createdTick = this.game.previousTicks + Math.random() * 500;
+
+        // 탄환 발사 관련 필드
+        this.coolTime = 0;
+        this.leftTimeForAttack = 0;
 
         this.bonusCoin = 20;
         this.explodeSize = 60;
@@ -1678,7 +1681,7 @@ class Box extends ComponentObject {
         this.position = Vector2.plus(this.owner.position, this.relativePosition);
         super.update(delta);
         if (this.game.state != "gameover")
-            this.doAttack();
+            this.doAttack(delta);
     }
 
     checkWallCollision() {
@@ -1742,7 +1745,7 @@ class Box extends ComponentObject {
 
     }
 
-    doAttack() {
+    doAttack(delta) {
 
     }
 }
@@ -1843,21 +1846,22 @@ class BarrierBox extends Box {
 }
 
 class CannonBox extends Box {
-    coolTime;
 
     constructor(game, position, owner, boost) {
         super(game, position, 30, 30, owner, boost);
         this.price = BOX_PRICE_CANNON;
         this.coolTime = CANNON_COOL;
+        this.leftTimeForAttack = this.coolTime + Math.random() / 2;
     }
 
     draw(ctx) {
         ctx.drawImage(img_cannonBox, this.position.x - this.width / 2, this.position.y - this.height / 2);
     }
 
-    doAttack() {
-        if (this.game.previousTicks - this.createdTick > this.coolTime && this.position.y > 0) {
-            this.createdTick = this.game.previousTicks + Math.random() * 500;
+    doAttack(delta) {
+        this.leftTimeForAttack -= delta;
+        if (this.leftTimeForAttack <= 0 && this.position.y > 0) {
+            this.leftTimeForAttack = this.coolTime + Math.random() / 2;
             new Cannon(this.game, this);
             new Anime_rectAct(this.game, this, 0, 700, "red");
         }
@@ -1865,7 +1869,6 @@ class CannonBox extends Box {
 }
 
 class MachinegunBox extends Box {
-    coolTime;
 
     constructor(game, position, owner, boost) {
         super(game, position, 30, 30, owner, boost);
@@ -1877,9 +1880,10 @@ class MachinegunBox extends Box {
         ctx.drawImage(img_machinegunBox, this.position.x - this.width / 2, this.position.y - this.height / 2);
     }
 
-    doAttack() {
-        if (this.game.previousTicks - this.createdTick > this.coolTime && this.position.y > 0) {
-            this.createdTick = this.game.previousTicks + Math.random() * 500;
+    doAttack(delta) {
+        this.leftTimeForAttack -= delta;
+        if (this.leftTimeForAttack <= 0 && this.position.y > 0) {
+            this.leftTimeForAttack = this.coolTime + Math.random() / 2;
             new Bullet(this.game, this);
             new Bullet(this.game, this);
             new Bullet(this.game, this);
@@ -1889,7 +1893,6 @@ class MachinegunBox extends Box {
 }
 
 class LazerBox extends Box {
-    coolTime;
 
     constructor(game, position, owner, boost) {
         super(game, position, 30, 30, owner, boost);
@@ -1901,9 +1904,9 @@ class LazerBox extends Box {
         ctx.drawImage(img_lazerBox, this.position.x - this.width / 2, this.position.y - this.height / 2);
     }
 
-    doAttack() {
-        if (this.game.previousTicks - this.createdTick > this.coolTime && this.position.y > 0) {
-            this.createdTick = this.game.previousTicks + Math.random() * 500;
+    doAttack(delta) {
+        if (this.leftTimeForAttack <= 0 && this.position.y > 0) {
+            this.leftTimeForAttack = this.coolTime + Math.random() / 2;
             new Lazer(this.game, this);
             new Anime_rectAct(this.game, this, 0, 700, "red");
         }
