@@ -1180,7 +1180,6 @@ class PlayerBall extends ComponentObject {
     launchSpeedList;  // 공의 상태에 따라 정해질 발사 속도 리스트
     parryingCount;
     parryingCheckTimeLeft;  // 플레이어가 충돌 이벤트 발생 이후에 클릭한 경우 패링을 검사하기 위한 필드.
-    ignoreCollideWithPlayer;  // 플레이어와 충돌한 뒤에 일정 시간동안 플레이어와 충돌하지 않도록 함.
     // 공이 플레이어와 부딪힌 뒤 몇 개의 블럭을 부수었는지 기록. 일정 개수 이상의 블록을 부수면 강화됨.
     // 주의 : 강화되는 순간 brokenBlockCount는 0으로 초기화됨. 따라서 실제 부순 블록 개수와는 달라질 수 있음.
     brokenBlockCount;
@@ -1205,7 +1204,6 @@ class PlayerBall extends ComponentObject {
         this.position.set(this.player.position.x, this.player.position.y + this.radius + this.player.height / 2);
         this.shape = new ShapeCircle(this, this.position, this.radius);
         this.speed.set(0, 0);
-        this.ignoreCollideWithPlayer = false;
         this.state = "generating";
         this.leftTimeForGenerating = this.generatingDelay;
         this.opacity = 0;
@@ -1240,11 +1238,6 @@ class PlayerBall extends ComponentObject {
         }
 
         super.update(delta);
-
-        // 플레이어와의 충돌 무효 시간 해제
-        if (this.ignoreCollideWithPlayer && this.game.player.height / 2 + this.radius < this.game.player.position.y - this.position.y) {
-            this.ignoreCollideWithPlayer = false;
-        }
     }
 
     updateShape() {
@@ -1293,7 +1286,7 @@ class PlayerBall extends ComponentObject {
     }
 
     collideWithPlayer() {
-        if (this.ignoreCollideWithPlayer)
+        if (this.position.y < 0)
             return;
 
         let jump_mp3 = new Audio("soundFolder/jump.mp3");
@@ -1303,7 +1296,6 @@ class PlayerBall extends ComponentObject {
         launchDirection.setLength(this.launchSpeed);
         this.setSpeed(launchDirection);
         this.updateParrying();
-        this.ignoreCollideWithPlayer = true;
     }
 
     removeSkill() {
