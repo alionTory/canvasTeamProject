@@ -696,6 +696,7 @@ class Game {
 
     gameEnd(winLose) {
         this.playerBall.removeSkill();
+        this.player.speed.set(0, 0);
         this.removeComponent(this.nextWaveInfo);
         switch (winLose) {
             case "win":
