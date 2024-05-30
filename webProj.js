@@ -230,6 +230,14 @@ $(document).on("keyup", function (event) {
         gameInput.esc = false;
     }
 });
+$(window).on("blur", function () {
+    console.log("blur");
+    gameInput.left = false;
+    gameInput.right = false;
+    gameInput.space = false;
+    gameInput.esc = false;
+    gameInput.click = false;
+});
 
 const GAME_WIDTH = 500;
 const GAME_HEIGHT = 700;
@@ -977,7 +985,8 @@ class Player extends ComponentObject {
     processInput() {
         if (gameInput.left && 0 < this.position.x) {
             this.speed.set(-this.maxSpeed, 0);
-        } else if (gameInput.right && this.position.x < GAME_WIDTH) {
+        } else if (!gameInput.left && gameInput.right && this.position.x < GAME_WIDTH) {
+            // !gameInput.left 조건은 왼쪽 벽에 붙은 상태에서 a, d키를 둘 다 눌렀을 때 플레이어가 이상하게 떨리는 것을 막기 위함.
             this.speed.set(this.maxSpeed, 0);
         } else {
             this.speed.set(0, 0);
